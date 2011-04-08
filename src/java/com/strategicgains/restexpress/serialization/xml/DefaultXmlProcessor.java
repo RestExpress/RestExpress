@@ -58,6 +58,11 @@ implements AliasingSerializationProcessor
 		shouldAutoAlias = false;
 	}
 	
+	protected XStream getXStream()
+	{
+		return this.xstream;
+	}
+	
 	
 	// SECTION: XML NAME ALIASING
 
