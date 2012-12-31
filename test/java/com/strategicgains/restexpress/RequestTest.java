@@ -18,6 +18,7 @@ package com.strategicgains.restexpress;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.net.URLEncoder;
 import java.util.List;
@@ -235,5 +236,16 @@ public class RequestTest
 		assertEquals(formValue1, form.get("openid.return_to").get(0));
 		assertEquals(formValue2, form.get("openid.identity").get(0));
 		assertEquals(formValue3, form.get("openid.claimed_id").get(0));
+	}
+	
+	@Test
+	public void shouldGetRequestHeaderNames()
+	{
+		request.addHeader("header-key", "header-value");
+		request.addHeader("header-key-1", "header-value-1");
+		request.addHeader("header-key-2", "");
+		assertTrue(request.getHeaderNames().contains("header-key"));
+		assertTrue(request.getHeaderNames().contains("header-key-1"));
+		assertTrue(request.getHeaderNames().contains("header-key-2"));
 	}
 }
