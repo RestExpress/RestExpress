@@ -26,6 +26,7 @@ import java.util.Map.Entry;
 
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.group.ChannelGroup;
 import org.jboss.netty.channel.group.ChannelGroupFuture;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
@@ -841,4 +842,9 @@ public class RestExpress
 	{
 		return routeDeclarations.regex(uriPattern, controller, routeDefaults);
 	}
+
+    public ChannelPipeline getPipeline() {
+
+        return bootstrap.getPipeline();
+    }
 }
