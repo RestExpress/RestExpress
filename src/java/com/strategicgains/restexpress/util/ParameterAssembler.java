@@ -41,10 +41,10 @@ public class ParameterAssembler {
        }
 
        if ((null != pathParam) || (null != queryParam)) {
-           if (objClass.isPrimitive()) {
-               ret = readPrimitive(request.getHeader(inputName), objClass);
+           if ((Date.class.equals(objClass)) || (Locale.class.equals(objClass))) {
+        	   ret = readWithProcessor(request.getSerializationProcessor(), request.getHeader(inputName), objClass);
            } else {
-               ret = readWithProcessor(request.getSerializationProcessor(), request.getHeader(inputName), objClass);
+               ret = readPrimitive(request.getHeader(inputName), objClass);
            }
        } else {
            // Complex Data type of parameters, annotation will be
