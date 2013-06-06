@@ -82,12 +82,9 @@ public class ParameterAssembler {
                //TODO, validation ret = DtoAssembler.mapAndValidate(request, null, clazz);
            }
 
-           System.out.println("ParametersInput: " + ret.getClass() + " : " + ret);
-
            args.add(ret);
        }
 
-       // No parameters
        return args;
    }
 
