@@ -1,20 +1,16 @@
 package com.strategicgains.restexpress.util;
 
-import com.strategicgains.restexpress.Request;
-import com.strategicgains.restexpress.Response;
-import com.strategicgains.restexpress.exception.BadRequestException;
-import com.strategicgains.restexpress.serialization.SerializationProcessor;
-
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
-import javax.ws.rs.PathParam;
-import javax.ws.rs.QueryParam;
+import com.strategicgains.restexpress.Request;
+import com.strategicgains.restexpress.Response;
+import com.strategicgains.restexpress.exception.BadRequestException;
+import com.strategicgains.restexpress.serialization.SerializationProcessor;
 
 
 /**
@@ -24,35 +20,38 @@ import javax.ws.rs.QueryParam;
 * @version $Revision$
 */
 public class ParameterAssembler {
+	private static final String HALF_QUOTE="\"";
+	
    //~ Methods ========================================================================================================
 
    private static Object applyParamAnnotation(Request request, Annotation[] annotations, Class<?> objClass) {
        Object ret = null;
+       
+       String annotationValue = getAnnotationvalue(annotations);
 
-       PathParam pathParam = AnnotationUtils.getAnnotation(annotations, PathParam.class);
-       QueryParam queryParam = AnnotationUtils.getAnnotation(annotations, QueryParam.class);
-
-       String inputName = null;
-
-       if (null != pathParam) {
-           inputName = pathParam.value();
-       } else if (null != queryParam) {
-           inputName = queryParam.value();
-       }
-
-       if ((null != pathParam) || (null != queryParam)) {
+       if (null != annotationValue) {
            if ((Date.class.equals(objClass)) || (Locale.class.equals(objClass))) {
-        	   ret = readWithProcessor(request.getSerializationProcessor(), request.getHeader(inputName), objClass);
+        	   ret = readWithProcessor(request.getSerializationProcessor(), request.getHeader(annotationValue), objClass);
            } else {
-               ret = readPrimitive(request.getHeader(inputName), objClass);
+               ret = readPrimitive(request.getHeader(annotationValue), objClass);
            }
        } else {
-           // Complex Data type of parameters, annotation will be
-           // @Context, @CookieParam, HeaderParam
+           // Complex Data type of parameters, annotation will be @Context
        }
 
        return ret;
    }
+
+	private static String getAnnotationvalue(Annotation[] annotations) {
+		String annValue = null;
+		for (Annotation ann : annotations) {
+			annValue = AnnotationUtils.getAnnotationValue(ann);
+			if (null != annValue) {
+				break;
+			}
+		}
+		return annValue;
+	}
 
    public static List<Object> assembleParameters(Method action, Request request, Response response) {
        // TODO, @Default.value(""), @Context annotation
@@ -136,7 +135,7 @@ public class ParameterAssembler {
        Object ret = value;
 
        if (Date.class.equals(type)) {
-           ret = processor.deserialize("\"" + value + "\"", type);
+           ret = processor.deserialize(HALF_QUOTE + value + HALF_QUOTE, type);
        } else if (Locale.class.equals(type)) {
            ret = processor.deserialize(value, type);
        }
