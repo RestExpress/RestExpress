@@ -65,8 +65,8 @@ public class ParameterAssembler {
            return args;
        }
 
-       Method annotatedMethod = AnnotationUtils.getAnnotatedMethod(action);
-       Annotation[][] paraAnnotations = annotatedMethod.getParameterAnnotations();
+       //Method annotatedMethod = AnnotationUtils.getAnnotatedMethod(action); //move to the RounteBuild
+       Annotation[][] paraAnnotations = action.getParameterAnnotations();
 
        for (int i = 0; i < paraAnnotations.length; i++) {
            Object ret = null;
