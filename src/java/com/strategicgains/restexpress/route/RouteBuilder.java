@@ -378,9 +378,8 @@ public abstract class RouteBuilder
 			if (null == paraTypes){
 				paraTypes = new Class<?>[]{Request.class, Response.class};
 			}
-			
 			Method action = controller.getClass().getMethod(actionName, paraTypes);
-			
+
 			Method annotatedMethod = AnnotationUtils.getAnnotatedMethod(action);
 			
 			return annotatedMethod;

@@ -64,7 +64,7 @@ public class ParameterAssembler {
 
            return args;
        }
-       
+
        Annotation[][] paraAnnotations = action.getParameterAnnotations();
 
        for (int i = 0; i < paraAnnotations.length; i++) {
