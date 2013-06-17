@@ -24,6 +24,7 @@ import com.strategicgains.restexpress.domain.metadata.RouteMetadata;
 import com.strategicgains.restexpress.domain.metadata.UriMetadata;
 import com.strategicgains.restexpress.exception.ConfigurationException;
 import com.strategicgains.restexpress.settings.RouteDefaults;
+import com.strategicgains.restexpress.util.AnnotationUtils;
 
 /**
  * Builds a route for a single URI.  If a URI is given with no methods or actions, the builder
@@ -378,7 +379,11 @@ public abstract class RouteBuilder
 				paraTypes = new Class<?>[]{Request.class, Response.class};
 			}
 			
-			return controller.getClass().getMethod(actionName, paraTypes);
+			Method action = controller.getClass().getMethod(actionName, paraTypes);
+			
+			Method annotatedMethod = AnnotationUtils.getAnnotatedMethod(action);
+			
+			return annotatedMethod;
 		}
 		catch (Exception e)
 		{

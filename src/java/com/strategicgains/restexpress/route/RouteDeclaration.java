@@ -22,6 +22,7 @@ import com.strategicgains.restexpress.domain.metadata.RouteMetadata;
 import com.strategicgains.restexpress.route.parameterized.ParameterizedRouteBuilder;
 import com.strategicgains.restexpress.route.regex.RegexRouteBuilder;
 import com.strategicgains.restexpress.settings.RouteDefaults;
+import com.strategicgains.restexpress.util.Callback;
 
 /**
  * @author toddf
@@ -78,23 +79,35 @@ public class RouteDeclaration
 	 */
 	public RouteMapping createRouteMapping(RouteDefaults defaults)
 	{
-		RouteMapping results = new RouteMapping();
+		final RouteMapping results = new RouteMapping();
 
-		for (RouteBuilder builder : routeBuilders)
+		iterateRouteBuilders(new Callback<RouteBuilder>()
 		{
-    		routeMetadata.add(builder.asMetadata());
+			@Override
+            public void process(RouteBuilder builder)
+            {
+	    		routeMetadata.add(builder.asMetadata());
 
-    		for (Route route : builder.build())
-			{
-				results.addRoute(route);
-			}
-		}
+	    		for (Route route : builder.build())
+				{
+					results.addRoute(route);
+				}
+            }
+		});
 
 		return results;
 	}
 
 	
 	// SECTION: CONSOLE
+	
+	public void iterateRouteBuilders(Callback<RouteBuilder> callback)
+	{
+		for (RouteBuilder builder : routeBuilders)
+		{
+			callback.process(builder);
+		}
+	}
 
 	/**
      * @return

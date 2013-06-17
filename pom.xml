@@ -6,7 +6,7 @@
 	<url>https://github.com/RestExpress/RestExpress</url>
 	<groupId>com.strategicgains</groupId>
 	<artifactId>RestExpress</artifactId>
-	<version>0.9.3.RS-SNAPSHOT</version>
+	<version>0.9.4-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<parent>
@@ -47,7 +47,7 @@
 		<dependency>
 			<groupId>io.netty</groupId>
 			<artifactId>netty</artifactId>
-			<version>3.6.5.Final</version>
+			<version>3.6.6.Final</version>
 		</dependency>
 		<dependency>
 			<groupId>junit</groupId>

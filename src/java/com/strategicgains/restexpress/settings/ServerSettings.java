@@ -23,11 +23,13 @@ public class ServerSettings
 {
 	private static final int DEFAULT_IO_THREAD_COUNT = 0;
 	private static final int DEFAULT_EXECUTOR_THREAD_POOL_SIZE = 10;
+	private static final int DEFAULT_MAX_CONTENT_SIZE = 25600;
 
 	private String name;
 	private int port;
 	private boolean keepAlive = true;
 	private boolean reuseAddress = true;
+	private int maxContentSize = DEFAULT_MAX_CONTENT_SIZE;
 
 	// This controls the number of concurrent connections the application can
 	// handle.
@@ -98,4 +100,14 @@ public class ServerSettings
 	{
 		this.port = port;
 	}
+
+	public int getMaxContentSize()
+    {
+	    return maxContentSize;
+    }
+
+	public void setMaxContentSize(int maxContentSize)
+    {
+	    this.maxContentSize = maxContentSize;
+    }
 }

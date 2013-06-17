@@ -24,7 +24,7 @@ Stable:
 		<dependency>
 			<groupId>com.strategicgains</groupId>
 			<artifactId>RestExpress</artifactId>
-			<version>0.9.2</version>
+			<version>0.9.3</version>
 		</dependency>
 ```
 Development:
@@ -32,7 +32,7 @@ Development:
 		<dependency>
 			<groupId>com.strategicgains</groupId>
 			<artifactId>RestExpress</artifactId>
-			<version>0.9.3-SNAPSHOT</version>
+			<version>0.9.4-SNAPSHOT</version>
 		</dependency>
 ```
 Or download the jar directly from: http://search.maven.org/#search%7Cga%7C1%7Ca%3A%22RestExpress%22
@@ -77,8 +77,18 @@ Please see the Kickstart application in examples/kickstart for a complete, runni
 ===================================================================================================
 Change History/Release Notes:
 ---------------------------------------------------------------------------------------------------
-Release 0.9.3 - SNAPSHOT (in branch 'master')
+Release 0.9.4 - SNAPSHOT (in branch 'master')
+
+Release 0.9.3 - 14 Jun 2013
+---------------------------------------------------------------------------------------------------
 * Fixed issue with setter getting called in deserialization instead of Jackson deserializer.
+* Removed LogLevel enumeration due to lack of use.
+* Fixed issue #61 - Large Chunked Request Causes Errors.  Added HttpChunkAggregator to the
+  pipeline.
+* Added RestExpress.setMaxContentSize(int) to allow limiting of total content length of requests
+  even if chunked.  Default max content size is 25K.
+* Added RestExpress.iterateRouteBuilders(Callback<RouteBuilder> callback) to facilitate
+  plugins, etc. augmenting or extracting information from the declared routes.
 
 Release 0.9.2 - 27 Mar 2013
 ---------------------------------------------------------------------------------------------------

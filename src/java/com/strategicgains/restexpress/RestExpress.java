@@ -43,6 +43,7 @@ import com.strategicgains.restexpress.pipeline.Preprocessor;
 import com.strategicgains.restexpress.plugin.Plugin;
 import com.strategicgains.restexpress.response.ResponseProcessor;
 import com.strategicgains.restexpress.response.ResponseProcessorResolver;
+import com.strategicgains.restexpress.route.RouteBuilder;
 import com.strategicgains.restexpress.route.RouteDeclaration;
 import com.strategicgains.restexpress.route.RouteResolver;
 import com.strategicgains.restexpress.route.parameterized.ParameterizedRouteBuilder;
@@ -52,8 +53,8 @@ import com.strategicgains.restexpress.settings.RouteDefaults;
 import com.strategicgains.restexpress.settings.ServerSettings;
 import com.strategicgains.restexpress.settings.SocketSettings;
 import com.strategicgains.restexpress.util.Bootstraps;
+import com.strategicgains.restexpress.util.Callback;
 import com.strategicgains.restexpress.util.DefaultShutdownHook;
-import com.strategicgains.restexpress.util.LogLevel;
 import com.strategicgains.restexpress.util.Resolver;
 
 /**
@@ -74,7 +75,6 @@ public class RestExpress
 	private SocketSettings socketSettings = new SocketSettings();
 	private ServerSettings serverSettings = new ServerSettings();
 	private RouteDefaults routeDefaults = new RouteDefaults();
-	private LogLevel logLevel = LogLevel.DEBUG; // Netty default
 	private boolean useSystemOut;
 
 	Map<String, ResponseProcessor> responseProcessors = new HashMap<String, ResponseProcessor>();
@@ -467,17 +467,6 @@ public class RestExpress
 		return this;
 	}
 
-	public LogLevel getLogLevel()
-	{
-		return logLevel;
-	}
-
-	public RestExpress setLogLevel(LogLevel logLevel)
-	{
-		this.logLevel = logLevel;
-		return this;
-	}
-
 	public boolean shouldReuseAddress()
 	{
 		return serverSettings.isReuseAddress();
@@ -604,6 +593,30 @@ public class RestExpress
 		return this;
 	}
 
+	/**
+	 * Set the maximum length of the content in a request. If the length of the content exceeds this value,
+	 * the server closes the connection immediately without sending a response.
+	 * 
+	 * @param size the maximum size in bytes.
+	 * @return the RestExpress instance.
+	 */
+	public RestExpress setMaxContentSize(int size)
+	{
+		serverSettings.setMaxContentSize(size);
+		return this;
+	}
+
+	/**
+	 * Can be called after routes are defined to augment or get data from
+	 * all the currently-defined routes.
+	 * 
+	 * @param callback a Callback implementor.
+	 */
+	public void iterateRouteBuilders(Callback<RouteBuilder> callback)
+	{
+		routeDeclarations.iterateRouteBuilders(callback);
+	}
+
 	public Channel bind()
 	{
 		return bind((getPort() > 0 ? getPort() : DEFAULT_PORT));
@@ -644,8 +657,8 @@ public class RestExpress
 		addFinallyProcessors(requestHandler);
 
 		PipelineBuilder pf = new PipelineBuilder()
-//			.addRequestHandler(new LoggingHandler(getLogLevel().getNettyLogLevel()))
-		    .addRequestHandler(requestHandler);
+		    .addRequestHandler(requestHandler)
+		    .setMaxContentLength(serverSettings.getMaxContentSize());
 
 		if (getExecutorThreadCount() > 0)
 		{
