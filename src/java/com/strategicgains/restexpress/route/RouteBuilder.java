@@ -24,6 +24,7 @@ import com.strategicgains.restexpress.domain.metadata.RouteMetadata;
 import com.strategicgains.restexpress.domain.metadata.UriMetadata;
 import com.strategicgains.restexpress.exception.ConfigurationException;
 import com.strategicgains.restexpress.settings.RouteDefaults;
+import com.strategicgains.restexpress.util.AnnotationUtils;
 
 /**
  * Builds a route for a single URI.  If a URI is given with no methods or actions, the builder
@@ -69,6 +70,7 @@ public abstract class RouteBuilder
 	private String baseUrl;
 	private Set<String> flags = new HashSet<String>();
 	private Map<String, Object> parameters = new HashMap<String, Object>();
+	private Map<String, Class<?>[]> actionParameterTypes = new HashMap<String, Class<?>[]>();
 	
 	/**
 	 * Create a RouteBuilder instance for the given URI pattern. URIs that match the pattern
@@ -103,6 +105,35 @@ public abstract class RouteBuilder
 		{
 			methods.add(method);
 		}
+
+		return this;
+	}
+	
+	/**
+	 * Map a service method name (action) to a particular HTTP method (e.g. GET, POST, PUT, DELETE, HEAD, OPTIONS)
+	 * 
+	 * @param action the name of a method within the service POJO.
+	 * @param method the HTTP method that should invoke the service method.
+	 * @param paraTypes the method parameters classType array
+	 * @return the RouteBuilder instance.
+	 */
+	public RouteBuilder action(String action, HttpMethod method, Class<?>[] paraTypes )
+	{
+		if (!actionNames.containsKey(method))
+		{
+			actionNames.put(method, action);
+		}
+		
+		if (!actionParameterTypes.containsKey(action))
+		{
+			actionParameterTypes.put(action, paraTypes);
+		}
+
+		if (!methods.contains(method))
+		{
+			methods.add(method);
+		}
+		
 
 		return this;
 	}
@@ -342,7 +373,16 @@ public abstract class RouteBuilder
 	{
 		try
 		{
-			return controller.getClass().getMethod(actionName, Request.class, Response.class);
+            Class<?>[] paraTypes = actionParameterTypes.get(actionName);
+			
+			if (null == paraTypes){
+				paraTypes = new Class<?>[]{Request.class, Response.class};
+			}
+			Method action = controller.getClass().getMethod(actionName, paraTypes);
+
+			Method annotatedMethod = AnnotationUtils.getAnnotatedMethod(action);
+			
+			return annotatedMethod;
 		}
 		catch (Exception e)
 		{

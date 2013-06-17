@@ -33,6 +33,7 @@ import com.strategicgains.restexpress.Response;
 import com.strategicgains.restexpress.exception.ServiceException;
 import com.strategicgains.restexpress.url.UrlMatch;
 import com.strategicgains.restexpress.url.UrlMatcher;
+import com.strategicgains.restexpress.util.ParameterAssembler;
 
 
 /**
@@ -195,7 +196,8 @@ public abstract class Route
 	{
 		try
         {
-	        return action.invoke(controller, request, response);
+			List<Object> parameters = ParameterAssembler.assembleParameters(action, request, response);
+			return action.invoke(controller, parameters.toArray());
         }
 		catch (InvocationTargetException e)
 		{
