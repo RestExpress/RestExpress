@@ -622,6 +622,29 @@ public class RestExpress
 		return bind((getPort() > 0 ? getPort() : DEFAULT_PORT));
 	}
 
+    /**
+     * Build a default request handler so it may be used injected into any existing pipeline.
+     *
+     * @return DefaultRequestHandler
+     */
+    public DefaultRequestHandler buildRequestHandler() {
+		// Set up the event pipeline factory.
+		DefaultRequestHandler requestHandler = new DefaultRequestHandler(
+		    createRouteResolver(), createResponseProcessorResolver());
+
+		// Add MessageObservers to the request handler here, if desired...
+		requestHandler.addMessageObserver(messageObservers.toArray(new MessageObserver[0]));
+
+		requestHandler.setExceptionMap(exceptionMap);
+
+		// Add pre/post processors to the request handler here...
+		addPreprocessors(requestHandler);
+		addPostprocessors(requestHandler);
+		addFinallyProcessors(requestHandler);
+
+        return requestHandler;
+    }
+
 	/**
 	 * The last call in the building of a RestExpress server, bind() causes
 	 * Netty to bind to the listening address and process incoming messages.
@@ -642,19 +665,7 @@ public class RestExpress
 			bootstrap = Bootstraps.createServerNioBootstrap(getIoThreadCount());
 		}
 
-		// Set up the event pipeline factory.
-		DefaultRequestHandler requestHandler = new DefaultRequestHandler(
-		    createRouteResolver(), createResponseProcessorResolver());
-
-		// Add MessageObservers to the request handler here, if desired...
-		requestHandler.addMessageObserver(messageObservers.toArray(new MessageObserver[0]));
-
-		requestHandler.setExceptionMap(exceptionMap);
-
-		// Add pre/post processors to the request handler here...
-		addPreprocessors(requestHandler);
-		addPostprocessors(requestHandler);
-		addFinallyProcessors(requestHandler);
+        DefaultRequestHandler requestHandler = buildRequestHandler();
 
 		PipelineBuilder pf = new PipelineBuilder()
 		    .addRequestHandler(requestHandler)
