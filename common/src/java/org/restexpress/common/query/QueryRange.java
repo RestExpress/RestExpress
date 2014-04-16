@@ -123,7 +123,7 @@ implements Cloneable
 	 */
 	public void setLimit(int value)
 	{
-		if (value <= 0) throw new IllegalArgumentException("limit must be >= 0");
+		if (value < 0) throw new IllegalArgumentException("limit must be >= 0");
 
 		this.limit = Integer.valueOf(value);
 	}
