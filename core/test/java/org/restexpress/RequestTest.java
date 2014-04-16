@@ -15,25 +15,15 @@
 */
 package org.restexpress;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import org.jboss.netty.buffer.ChannelBuffers;
+import org.jboss.netty.handler.codec.http.*;
+import org.junit.*;
+import org.restexpress.exception.BadRequestException;
 
 import java.net.URLEncoder;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.handler.codec.http.DefaultHttpRequest;
-import org.jboss.netty.handler.codec.http.HttpMethod;
-import org.jboss.netty.handler.codec.http.HttpRequest;
-import org.jboss.netty.handler.codec.http.HttpVersion;
-import org.junit.Before;
-import org.junit.Test;
-import org.restexpress.ContentType;
-import org.restexpress.Request;
-import org.restexpress.exception.BadRequestException;
+import static org.junit.Assert.*;
 
 /**
  * @author toddf
@@ -92,7 +82,8 @@ public class RequestTest
 	{
 		Request r = new Request(new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/foo"), null);
 		Map<String, String> m = r.getQueryStringMap();
-		assertNull(m);
+		assertNotNull(m);
+        assertTrue(m.isEmpty());
 	}
 
 	@Test
@@ -100,7 +91,8 @@ public class RequestTest
 	{
 		Request r = new Request(new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/foo?"), null);
 		Map<String, String> m = r.getQueryStringMap();
-		assertNull(m);
+        assertNotNull(m);
+        assertTrue(m.isEmpty());
 	}
 
 	@Test
@@ -265,4 +257,13 @@ public class RequestTest
 		assertTrue(request.getHeaders("common-key").contains("header-value"));
 		assertTrue(request.getHeaders("common-key").contains("header-value-1"));
 	}
+
+    @Test
+    public void shouldNotReturnNullWhenNoQueryString() {
+        Request noQueryRequest = new Request(
+                new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/noquery"),
+                null, null
+        );
+        assertNotNull(noQueryRequest.getQueryStringMap());
+    }
 }
