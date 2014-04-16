@@ -6,6 +6,9 @@ package org.restexpress.pipeline;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+
 import org.jboss.netty.channel.ChannelHandler;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
@@ -16,6 +19,7 @@ import org.jboss.netty.handler.codec.http.HttpContentDecompressor;
 import org.jboss.netty.handler.codec.http.HttpRequestDecoder;
 import org.jboss.netty.handler.codec.http.HttpResponseEncoder;
 import org.jboss.netty.handler.execution.ExecutionHandler;
+import org.jboss.netty.handler.ssl.SslHandler;
 import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 
 /**
@@ -37,6 +41,7 @@ implements ChannelPipelineFactory
 	private List<ChannelHandler> requestHandlers = new ArrayList<ChannelHandler>();
 	private ExecutionHandler executionHandler = null;
 	private int maxContentLength = DEFAULT_MAX_CONTENT_LENGTH;
+	private SSLContext sslContext = null;
 
 	
 	// SECTION: CONSTRUCTORS
@@ -80,6 +85,16 @@ implements ChannelPipelineFactory
 		return this;
 	}
 
+	public PipelineBuilder setSSLContext(SSLContext sslContext)
+	{
+		this.sslContext = sslContext;
+		return this;
+	}
+	
+	public SSLContext getSSLContext()
+	{
+		return sslContext;
+	}
 
 	// SECTION: CHANNEL PIPELINE FACTORY
 
@@ -89,6 +104,14 @@ implements ChannelPipelineFactory
 	{
 		ChannelPipeline pipeline = Channels.pipeline();
 
+		if (null != sslContext)
+		{
+			SSLEngine sslEngine = sslContext.createSSLEngine();
+			sslEngine.setUseClientMode(false);
+			SslHandler sslHandler = new SslHandler(sslEngine);
+			pipeline.addLast("ssl", sslHandler);
+		}
+		
 		pipeline.addLast("decoder", new HttpRequestDecoder());
 		pipeline.addLast("aggregator", new HttpChunkAggregator(maxContentLength));
 		pipeline.addLast("encoder", new HttpResponseEncoder());

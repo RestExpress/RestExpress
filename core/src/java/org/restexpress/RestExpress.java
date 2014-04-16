@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import javax.net.ssl.SSLContext;
+
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.group.ChannelGroup;
@@ -83,6 +85,7 @@ public class RestExpress
 	private ExceptionMapping exceptionMap = new DefaultExceptionMapper();
 	private List<Plugin> plugins = new ArrayList<Plugin>();
 	private RouteDeclaration routeDeclarations = new RouteDeclaration();
+	private SSLContext sslContext = null;
 	
 	/**
 	 * Change the default behavior for serialization.
@@ -139,6 +142,17 @@ public class RestExpress
 		useSystemOut();
 	}
 
+	public RestExpress setSSLContext(SSLContext sslContext)
+	{
+		this.sslContext = sslContext;
+		return this;
+	}
+	
+	public SSLContext getSSLContext()
+	{
+		return sslContext;
+	}
+	
 	public String getBaseUrl()
 	{
 		return routeDefaults.getBaseUrl();
@@ -526,6 +540,7 @@ public class RestExpress
 
 		PipelineBuilder pf = new PipelineBuilder()
 		    .addRequestHandler(requestHandler)
+		    .setSSLContext(sslContext)
 		    .setMaxContentLength(serverSettings.getMaxContentSize());
 
 		if (getExecutorThreadCount() > 0)
