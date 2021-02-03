@@ -66,13 +66,15 @@ implements UrlMatcher
 	// SECTION: CONSTANTS
 
 	// Finds parameters in the URL pattern string.
-	private static final String URL_PARAM_REGEX = "\\{(\\w*?)\\}";
+	//private static final String URL_PARAM_REGEX = "\\{(\\w*?)\\}|\\(\\?<(\\w*)>.*?\\)";
+  private static final String URL_PARAM_REGEX = "\\{(\\w*?)\\}";
+  //private static final String URL_PARAM_REGEX = "\\(\\?<(\\w*)>.*?\\)";
 
 	// Replaces parameter names in the URL pattern string to match parameters in URLs.
 	private static final String URL_PARAM_MATCH_REGEX = "\\([%\\\\w-.\\\\~!\\$&'\\\\(\\\\)\\\\*\\\\+,;=:\\\\[\\\\]@]+?\\)";
 
 	// Pattern to match URL pattern parameter names.
-	private static final Pattern URL_PARAM_PATTERN = Pattern.compile(URL_PARAM_REGEX);
+	private static final Pattern URL_PARAM_PATTERN = Pattern.compile(URL_PARAM_REGEX+"|\\(\\?<(\\w*)>.*?\\)");
 
 	// Finds the 'format' portion of the URL pattern string.
 	private static final String URL_FORMAT_REGEX = "(?:\\.\\{format\\})$";
@@ -198,14 +200,16 @@ implements UrlMatcher
 	 * the ordered list, parameterNames.
 	 */
 	private void acquireParameterNames()
-    {
-	    Matcher m = URL_PARAM_PATTERN.matcher(getUrlPattern());
+  {
+    Matcher m = URL_PARAM_PATTERN.matcher(getUrlPattern());
 
 		while (m.find())
 		{
-			parameterNames.add(m.group(1));
+      String parameterName = m.group(1) ;
+      if ( null == parameterName ) { parameterName = m.group(2) ; }
+			parameterNames.add( parameterName );
 		}
-    }
+  }
 
 	/**
 	 * Extracts parameter values from a Matcher instance using the regular expression groupings.
@@ -221,7 +225,7 @@ implements UrlMatcher
 	    {
 	    	String value = matcher.group(i + 1);
 	    	
-	    	if (value != null)
+	    	if ( (null != value) && (parameterNames.size() > i) )
 	    	{
 	    		values.put(parameterNames.get(i), value);
 	    	}

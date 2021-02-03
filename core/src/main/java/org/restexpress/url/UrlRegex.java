@@ -78,26 +78,42 @@ implements UrlMatcher
 		return null;
 	}
 
-	/**
-	 * Extracts parameter values from a Matcher instance.
-	 * 
-	 * @param matcher
-	 * @return a Map containing parameter values indexed by their corresponding parameter name.
-	 */
-	private Map<String, String> extractParameters(Matcher matcher)
-    {
-	    Map<String, String> values = new HashMap<String, String>();
-	    
-	    for (int i = 0; i < matcher.groupCount(); i++)
-	    {
-	    	String value = matcher.group(i + 1);
-	    	
-	    	if (value != null)
-	    	{
-	    		values.put(PARAMETER_PREFIX + i, value);
-	    	}
-	    }
+  /**
+   * Extracts parameter values from a Matcher instance.
+   * 
+   * @param matcher
+   * @return a Map containing parameter values indexed by their corresponding parameter name.
+   */
+  private Map<String, String> extractParameters(Matcher matcher)
+  {
+    Map<String, String> values = new HashMap<String, String>();
 
-	    return values;
+    //  added by Darwin Airola on 2015-03-17
+    Pattern groupNamePattern
+      = Pattern.compile( "\\(\\s*\\?<\\s*([a-zA-Z]\\w*)>[^\\)]*\\)" ) ;
+    Matcher groupNameMatcher
+      = groupNamePattern.matcher( matcher.pattern().toString() ) ;
+    while( groupNameMatcher.find() )
+    {
+      for ( int i = 1 ; i < groupNameMatcher.groupCount()+1 ; i++ )
+      {
+        String groupName = groupNameMatcher.group( i ) ;
+        String value = matcher.group( groupName ) ;
+        if ( null != value ) { values.put( groupName, value ) ; break ; }
+      }
     }
-}
+
+    for (int i = 0; i < matcher.groupCount(); i++)
+    {
+      String value = matcher.group(i + 1);
+	    	
+      if (value != null)
+      {
+        values.put(PARAMETER_PREFIX + i, value);
+      }
+    }
+
+    return values;
+  }
+
+}   //  public class UrlRegex
