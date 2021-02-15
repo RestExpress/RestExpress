@@ -16,20 +16,33 @@
  */
 package org.restexpress;
 
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.channel.AdaptiveRecvByteBufAllocator;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.group.ChannelGroup;
+import io.netty.channel.group.ChannelGroupFuture;
+import io.netty.channel.group.DefaultChannelGroup;
+import io.netty.handler.ssl.SslContext;
+import io.netty.util.concurrent.DefaultEventExecutorGroup;
+import io.netty.util.concurrent.EventExecutorGroup;
+import io.netty.util.concurrent.GenericFutureListener;
+import io.netty.util.concurrent.GlobalEventExecutor;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.restexpress.domain.metadata.RouteMetadata;
 import org.restexpress.domain.metadata.ServerMetadata;
 import org.restexpress.exception.DefaultExceptionMapper;
 import org.restexpress.exception.ExceptionMapping;
 import org.restexpress.exception.ServiceException;
 import org.restexpress.pipeline.DefaultRequestHandler;
-import org.restexpress.pipeline.FileUploadHandler;
 import org.restexpress.pipeline.MessageObserver;
 import org.restexpress.pipeline.PipelineInitializer;
 import org.restexpress.pipeline.Postprocessor;
@@ -48,22 +61,6 @@ import org.restexpress.settings.ServerSettings;
 import org.restexpress.settings.SocketSettings;
 import org.restexpress.util.Callback;
 import org.restexpress.util.DefaultShutdownHook;
-
-import io.netty.bootstrap.ServerBootstrap;
-import io.netty.buffer.PooledByteBufAllocator;
-import io.netty.channel.AdaptiveRecvByteBufAllocator;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.group.ChannelGroup;
-import io.netty.channel.group.ChannelGroupFuture;
-import io.netty.channel.group.DefaultChannelGroup;
-import io.netty.handler.ssl.SslContext;
-import io.netty.util.concurrent.DefaultEventExecutorGroup;
-import io.netty.util.concurrent.EventExecutorGroup;
-import io.netty.util.concurrent.GenericFutureListener;
-import io.netty.util.concurrent.GlobalEventExecutor;
 
 /**
  * Primary entry point to create a RestExpress service. All that's required is a
@@ -103,6 +100,7 @@ public class RestExpress
 	private RouteDeclaration routeDeclarations = new RouteDeclaration();
 	private SslContext sslContext = null;
 	private SerializationProvider serializationProvider = null;
+	private RouteResolver routeResolver = null;
 
 	/**
 	 * Change the default behavior for serialization.
@@ -661,17 +659,6 @@ public class RestExpress
 		return requestHandler;
 	}
 
-	public FileUploadHandler buildFileUploadRequestHandler() {
-		FileUploadHandler fileUploadHandler = new FileUploadHandler(
-				createRouteResolver(), serializationProvider(),
-				new DefaultHttpResponseWriter(), enforceHttpSpec);
-
-		fileUploadHandler.setExceptionMap(exceptionMap);
-
-		return fileUploadHandler;
-	}
-
-
 	/**
 	 * The last call in the building of a RestExpress server, bind() causes
 	 * Netty to bind to the listening address and process incoming messages.
@@ -709,19 +696,14 @@ public class RestExpress
 	throws Throwable
 	{
 		ServerBootstrap bootstrap = bootstrapFactory.newServerBootstrap(getIoThreadCount());
-		PipelineInitializer pi = new PipelineInitializer()
+		PipelineInitializer pi = new PipelineInitializer(createRouteResolver())
 			.setExecutionHandler(initializeExecutorGroup())
-		    .addRequestHandler(DEFAULT_HANDLER_NAME, buildRequestHandler())
+		    .addRequestHandler(buildRequestHandler())
 		    .setSSLContext(sslContext)
 		    .setMaxContentLength(serverSettings.getMaxContentSize())
+				.setSupportFileUpload(serverSettings.isSupportFileUpload())
 		    .setReadTimeout(serverSettings.getReadTimeout(), serverSettings.getReadTimeoutUnit())
 		    .setUseCompression(serverSettings.shouldUseCompression());
-
-		if (serverSettings.isSupportFileUpload())
-		{
-			pi.setSupportFileUpload(true)
-				.addRequestHandler(FILEUPLOAD_HANDLER_NAME, buildFileUploadRequestHandler());
-		}
 		
 		bootstrap.childHandler(pi);
 
@@ -843,7 +825,11 @@ public class RestExpress
 	 */
 	private RouteResolver createRouteResolver()
 	{
-		return new RouteResolver(routeDeclarations.createRouteMapping(routeDefaults));
+		if ( this.routeResolver == null )
+		{
+			routeResolver = new RouteResolver(routeDeclarations.createRouteMapping(routeDefaults));
+		}
+		return routeResolver;
 	}
 
 	/**
