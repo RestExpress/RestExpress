@@ -27,13 +27,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import io.netty.handler.codec.http.HttpMethod;
 import org.restexpress.Request;
 import org.restexpress.Response;
 import org.restexpress.common.util.StringUtils;
+import org.restexpress.contenttype.MediaRange;
 import org.restexpress.exception.ServiceException;
 import org.restexpress.url.UrlMatch;
 import org.restexpress.url.UrlMatcher;
+
+import io.netty.handler.codec.http.HttpMethod;
 
 
 /**
@@ -45,12 +47,11 @@ import org.restexpress.url.UrlMatcher;
  */
 public abstract class Route
 {
-	// SECTION: INSTANCE VARIABLES
-
 	private UrlMatcher urlMatcher;
 	private Object controller;
 	private Method action;
 	private HttpMethod method;
+	private List<MediaRange> contentTypes;
 	private boolean shouldSerializeResponse = true;
 	private String name;
 	private String baseUrl;
@@ -59,13 +60,11 @@ public abstract class Route
 	private Set<String> flags = new HashSet<String>();
 	private Map<String, Object> parameters = new HashMap<String, Object>();
 
-	// SECTION: CONSTRUCTORS
-
 	/**
 	 * @param urlMatcher
 	 * @param controller
 	 */
-	public Route(UrlMatcher urlMatcher, Object controller, Method action, HttpMethod method, boolean shouldSerializeResponse,
+	protected Route(UrlMatcher urlMatcher, Object controller, Method action, HttpMethod method, boolean shouldSerializeResponse,
 		String name, List<String> supportedFormats, String defaultFormat, Set<String> flags, Map<String, Object> parameters,
 		String baseUrl)
 	{
@@ -202,7 +201,12 @@ public abstract class Route
 	{
 		return urlMatcher.getPattern();
 	}
-	
+
+	public boolean appliesTo(HttpMethod method, MediaRange contentType)
+	{
+		return (this.method.equals(method) && (contentTypes == null || contentTypes.contains(contentType)));
+	}
+
 	public boolean shouldSerializeResponse()
 	{
 		return shouldSerializeResponse;
