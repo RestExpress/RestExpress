@@ -29,6 +29,11 @@ import java.util.List;
  */
 public class MediaTypeParser
 {
+	private MediaTypeParser()
+	{
+		// prevents instantiation.
+	}
+
 	/**
 	 * Parses a Content-Type or Accept header into an ordered List of MediaRange
 	 * instances, which in turn can be used to determine which media type is most
@@ -42,7 +47,7 @@ public class MediaTypeParser
 		if (mediaType == null) return Collections.emptyList();
 
 		String[] segments = mediaType.split("\\s*,\\s*");
-		List<MediaRange> items = new ArrayList<MediaRange>();
+		List<MediaRange> items = new ArrayList<>();
 
 		for (String segment : segments)
 		{
@@ -62,7 +67,7 @@ public class MediaTypeParser
 	 */
 	public static String getBestMatch(List<MediaRange> supportedRanges, List<MediaRange> requestedRanges)
 	{
-		List<WeightedMatch> matches = new ArrayList<WeightedMatch>();
+		List<WeightedMatch> matches = new ArrayList<>();
 
 		for (MediaRange supportedRange : supportedRanges)
 		{
