@@ -15,7 +15,7 @@ import io.netty.handler.codec.http.HttpMethod;
 public class RouteIndexNode
 {
 	private static final String SLASH = "/";
-	private static final String WILDCARD = "*";
+	private static final String WILDCARD = "{**}";
 
 	// Finds parameter wild cards in the URL pattern string.
 	private static final String URL_PARAM_REGEX = "\\{\\w*?\\}";
@@ -55,11 +55,11 @@ public class RouteIndexNode
 	public List<Route> find(String path)
 	{
 		String[] segments = getSegments(path);
-		RouteIndexNode node = traverse(segments, 0);
+		RouteIndexNode leafNode = traverse(segments, 0);
 
-		if (node == null) return Collections.emptyList();
+		if (leafNode == null) return Collections.emptyList();
 
-		return Collections.unmodifiableList(node.routes);
+		return Collections.unmodifiableList(leafNode.routes);
 	}
 
 	@Override
