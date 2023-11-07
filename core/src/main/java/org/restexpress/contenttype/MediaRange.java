@@ -38,7 +38,7 @@ public class MediaRange
 	String type;
 	String subtype;
 	float qvalue = 1.0f;
-	Map<String, String> parameters = new HashMap<String, String>();
+	Map<String, String> parameters = new HashMap<>();
 
 	public MediaRange(String value)
 	{
