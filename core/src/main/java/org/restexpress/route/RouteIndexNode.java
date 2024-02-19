@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
 
@@ -157,7 +156,10 @@ public class RouteIndexNode
 
 	private Route findRoute(HttpMethod method, MediaRange contentType)
 	{
-		Optional<Route> sel = routes.stream().filter(s -> s.appliesTo(method, contentType)).limit(1).findFirst();
-		return (sel.isPresent() ? sel.get() : null);
+		return routes.stream()
+			.filter(s -> s.appliesTo(method, contentType))
+			.limit(1)
+			.findFirst()
+			.orElse(null);
 	}
 }
