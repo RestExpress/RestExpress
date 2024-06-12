@@ -3,13 +3,6 @@
  */
 package org.restexpress.pipeline;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.concurrent.TimeUnit;
-
-import org.restexpress.RestExpress;
-
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelInitializer;
@@ -24,6 +17,10 @@ import io.netty.handler.ssl.SslContext;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.util.concurrent.EventExecutorGroup;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import org.restexpress.route.RouteResolver;
 
 /**
  * Provides a tiny DSL to define the pipeline features.
@@ -41,7 +38,7 @@ extends ChannelInitializer<SocketChannel>
 
 	// SECTION: INSTANCE VARIABLES
 
-	private Map<String, ChannelHandler> requestHandlers = new HashMap<>();
+	private List<ChannelHandler> requestHandlers = new ArrayList<>();
 	private int maxContentLength = DEFAULT_MAX_CONTENT_LENGTH;
 	private EventExecutorGroup eventExecutorGroup = null;
 	private SslContext sslContext = null;
@@ -49,6 +46,7 @@ extends ChannelInitializer<SocketChannel>
 	private long readTimeout = -1L;
 	private TimeUnit readTimeoutUnit = TimeUnit.SECONDS;
 	private boolean supportFileUpload = false;
+	private RouteResolver routeResolver;
 
 	// SECTION: CONSTRUCTORS
 
@@ -57,17 +55,18 @@ extends ChannelInitializer<SocketChannel>
 		super();
 	}
 
+	public PipelineInitializer(RouteResolver routeResolver)
+	{
+		this.routeResolver = routeResolver;
+	}
+
 	// SECTION: BUILDER METHODS
 
 
 	public PipelineInitializer addRequestHandler(ChannelHandler handler)
 	{
-		return addRequestHandler(handler.getClass().getSimpleName(), handler);
-	}
-
-	public PipelineInitializer addRequestHandler(String name, ChannelHandler handler)
-	{
-		requestHandlers.computeIfAbsent(name, k -> handler);
+		if (!requestHandlers.contains(handler))
+			requestHandlers.add(handler);
 		return this;
 	}
 
@@ -136,6 +135,14 @@ extends ChannelInitializer<SocketChannel>
 		if (supportFileUpload)
 		{
 			pipeline.addLast("URLDecoder", new RequestURLDecoder());
+			if (eventExecutorGroup != null)
+			{
+				pipeline.addLast(eventExecutorGroup, FileUploadHandler.class.getSimpleName(), new FileUploadHandler(routeResolver));
+			}
+			else
+			{
+				pipeline.addLast( FileUploadHandler.class.getSimpleName(), new FileUploadHandler(routeResolver));
+			}
 		}
 
 		// Outbound handlers
@@ -155,24 +162,8 @@ extends ChannelInitializer<SocketChannel>
 
 	private void addAllHandlers(ChannelPipeline pipeline)
 	{
-		for (Entry<String, ChannelHandler> entry : requestHandlers.entrySet())
+		for (ChannelHandler handler : requestHandlers)
 		{
-			String name = entry.getKey();
-			ChannelHandler handler = entry.getValue();
-
-			if (supportFileUpload && isFileUploadHandler(name))
-			{
-				if (eventExecutorGroup != null)
-				{
-					pipeline.addBefore(eventExecutorGroup, AGGREGATOR, handler.getClass().getSimpleName(), handler);
-				}
-				else
-				{
-					pipeline.addBefore(AGGREGATOR, handler.getClass().getSimpleName(), handler);
-				}
-			}
-			else
-			{
 				if (eventExecutorGroup != null)
 				{
 					pipeline.addLast(eventExecutorGroup, handler.getClass().getSimpleName(), handler);
@@ -182,7 +173,6 @@ extends ChannelInitializer<SocketChannel>
 					pipeline.addLast(handler.getClass().getSimpleName(), handler);
 				}
 			}
-		}
 	}
 
 	public PipelineInitializer setUseCompression(boolean shouldUseCompression)
@@ -195,10 +185,5 @@ extends ChannelInitializer<SocketChannel>
 	{
 		this.supportFileUpload = shouldSupportFileUpload;
 		return this;
-	}
-
-	private boolean isFileUploadHandler(String name)
-	{
-		return RestExpress.FILEUPLOAD_HANDLER_NAME.equals(name);
 	}
 }

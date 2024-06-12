@@ -15,29 +15,7 @@
  */
 package org.restexpress.pipeline;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
-import java.nio.file.Paths;
-import java.util.UUID;
-
-import org.restexpress.ContentType;
-import org.restexpress.Request;
-import org.restexpress.Response;
-import org.restexpress.exception.DefaultExceptionMapper;
-import org.restexpress.exception.ExceptionMapping;
-import org.restexpress.exception.ServiceException;
-import org.restexpress.response.HttpResponseWriter;
-import org.restexpress.route.Action;
-import org.restexpress.route.RouteResolver;
-import org.restexpress.serialization.DefaultSerializationProvider;
-import org.restexpress.serialization.SerializationProvider;
-import org.restexpress.serialization.SerializationSettings;
-import org.restexpress.util.HttpSpecification;
-
 import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
@@ -57,6 +35,25 @@ import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder.ErrorDataDec
 import io.netty.handler.codec.http.multipart.InterfaceHttpData;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData.HttpDataType;
 import io.netty.util.AttributeKey;
+import java.io.File;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.file.Paths;
+import java.util.UUID;
+import org.restexpress.ContentType;
+import org.restexpress.Request;
+import org.restexpress.Response;
+import org.restexpress.exception.DefaultExceptionMapper;
+import org.restexpress.exception.ExceptionMapping;
+import org.restexpress.response.DefaultHttpResponseWriter;
+import org.restexpress.response.HttpResponseWriter;
+import org.restexpress.route.Action;
+import org.restexpress.route.RouteResolver;
+import org.restexpress.serialization.DefaultSerializationProvider;
+import org.restexpress.serialization.SerializationProvider;
+import org.restexpress.serialization.SerializationSettings;
+import org.restexpress.util.HttpSpecification;
 
 /***
  * @author - Murali S Rao
@@ -69,7 +66,6 @@ import io.netty.util.AttributeKey;
  * by retrieving the path of the file using an "attachment" named "FILE_ATTACHMENT_KEY"
  *
  */
-@Sharable
 public class FileUploadHandler
 extends SimpleChannelInboundHandler<HttpObject>
 {
@@ -90,13 +86,13 @@ extends SimpleChannelInboundHandler<HttpObject>
 	private MessageContext messageContext = null;
 	private ExceptionMapping exceptionMap = new DefaultExceptionMapper();
 
-	public FileUploadHandler(RouteResolver routeResolver, SerializationProvider serializationProvider, HttpResponseWriter responseWriter, boolean enforceHttpSpec)
+	public FileUploadHandler(RouteResolver routeResolver)
 	{
 		super();
 		this.routeResolver = routeResolver;
-		this.serializationProvider = serializationProvider;
-		setResponseWriter(responseWriter);
-		this.shouldEnforceHttpSpec = enforceHttpSpec;
+		this.serializationProvider = new DefaultSerializationProvider();
+		setResponseWriter(new DefaultHttpResponseWriter());
+		this.shouldEnforceHttpSpec = true;
 	}
 
 	@Override
