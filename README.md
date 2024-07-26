@@ -1,5 +1,3 @@
-[![Stories in Ready](https://badge.waffle.io/RestExpress/RestExpress.png?label=Ready)](http://waffle.io/RestExpress/RestExpress)
-
 RestExpress is a thin wrapper on the JBOSS Netty HTTP stack to provide a simple and easy way to
 create RESTful services in Java that support massive Internet Scale and performance.
 
@@ -7,7 +5,7 @@ Born to be simple, only three things are required to wire up a service:
 
 1. The main class which utilizes the RestExpress DSL to create a server instance.
 2. Use a DSL for the declaration of supported URLs and HTTP methods of the service(s) (much like routes.rb in a Rails app).
-3. Service implementation(s), which is/are a simple POJO--no interface or super class implementation.
+3. Service controller implementation(s), which is/are a simple POJO--no interface or super class implementation.
 
 See: https://github.com/RestExpress/RestExpress-Archetype to get started (there is a README there).
 
@@ -80,12 +78,12 @@ Release 0.12.0-SNAPSHOT (in master)
 * **BREAKING CHANGE** Issue#135 - Query-string parameter keys and values are URL decoded before putting them into the header and query-string maps.
 * **BREAKING CHANGE** Changed getBaseUrl() to consider X-Forwarded-Host, Forwarded and HOST headers to enable constructing baseURL behind load balancers and proxies.
 * Issue #126 - Introduced RestExpress.noCompression() to turn off response GZip and deflate encoding support (the Netty HttpContentCompressor is not put in the pipeline) for speed optimization (e.g. for small payloads).
-* Issue #130 - Throw on BindException.
+* Issue #130 - Throw on BindException (where the server IP address/port are already in use).
 * Issues #137-138 - Use char[] vs String in SslUtil (Merge request from albahrani).
 * Issue #131 - RestExpress.setReadTimeoutSeconds(int seconds) or setReadTimeout(long, TimeUnit) now causes RestExpress to inject a ReadTimeoutHandler into the pipeline.
 * Issues #145, 22 - Support for large, multi-part file uploads via POST. Off by default. Call restExpressInstance.supportFileUploads(true) to enable.
 * Upgraded Jackson Databind to 2.12.1
-* Upgraded Netty to 4.1.58.Final
+* Upgraded Netty to 4.1.112.Final
 * Upgraded Xstream to 1.4.11.1
 * Upgraded OWASP encoder to 1.2.3
 * Updated to compile with JDK 11 (use Base64 instead of DatatypeConverter in HttpBasicAuthenticationPreprocessor).
