@@ -10,7 +10,7 @@
 	<packaging>pom</packaging>
 
 	<properties>
-		<jdk.version>1.8</jdk.version>
+		<jdk.version>21</jdk.version>
 	</properties>
 
 	<modules>
