@@ -15,8 +15,6 @@
 */
 package org.restexpress;
 
-import java.util.concurrent.Executors;
-
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.epoll.Epoll;
@@ -42,11 +40,6 @@ public class ServerBootstrapFactory
 			return newEpollServerBootstrap(ioThreadCount);
 		}
 
-		if (ioThreadCount < 0)
-		{
-			return newVirtualThreadServerBootstrap();
-		}
-
 		return newNioServerBootstrap(ioThreadCount);
     }
 
@@ -61,16 +54,6 @@ public class ServerBootstrapFactory
 			bossFuture.awaitUninterruptibly();
 		}
     }
-
-	private ServerBootstrap newVirtualThreadServerBootstrap()
-	{
-		this.bossGroup = new NioEventLoopGroup(0, Executors.newVirtualThreadPerTaskExecutor());
-		this.workerGroup = new NioEventLoopGroup(0, Executors.newVirtualThreadPerTaskExecutor());
-
-		return new ServerBootstrap()
-			.group(bossGroup, workerGroup)
-			.channel(NioServerSocketChannel.class);
-	}
 
 	private ServerBootstrap newNioServerBootstrap(int ioThreadCount)
     {
