@@ -760,7 +760,7 @@ public class RestExpress
     {
 		if (getExecutorThreadCount() > 0)
 		{
-			return new DefaultEventExecutorGroup(getExecutorThreadCount());
+			return new DefaultEventExecutorGroup(getExecutorThreadCount(), Thread.ofVirtual().factory());
 		}
 
 		return null;
@@ -777,7 +777,6 @@ public class RestExpress
 		bootstrap.childOption(ChannelOption.SO_KEEPALIVE, useKeepAlive());
 		bootstrap.childOption(ChannelOption.TCP_NODELAY, useTcpNoDelay());
 		bootstrap.childOption(ChannelOption.SO_LINGER, getSoLinger());
-		//TODO: Investigate re. memory leak.
 		bootstrap.childOption(ChannelOption.ALLOCATOR, new PooledByteBufAllocator(true));
 		bootstrap.option(ChannelOption.RCVBUF_ALLOCATOR, new AdaptiveRecvByteBufAllocator());
 		bootstrap.childOption(ChannelOption.SO_RCVBUF, getReceiveBufferSize());
