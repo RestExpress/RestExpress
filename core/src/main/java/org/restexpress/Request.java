@@ -20,18 +20,22 @@ package org.restexpress;
 import java.io.File;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.URL;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.nio.ByteBuffer;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Stream;
 
-import org.restexpress.domain.Forwarded;
-import org.restexpress.domain.ForwardedParseError;
+import org.restexpress.domain.BaseUrlResolver;
 import org.restexpress.exception.BadRequestException;
 import org.restexpress.pipeline.FileUploadHandler;
 import org.restexpress.route.Route;
@@ -56,8 +60,6 @@ import io.netty.handler.codec.http.QueryStringDecoder;
  */
 public class Request
 {
-	private static final String URL_FORMAT = "%s://%s";
-
 	private static AtomicLong nextCorrelationId = new AtomicLong(0);
 
 
@@ -106,8 +108,7 @@ public class Request
 		this.routeResolver = routeResolver;
 		this.serializationProvider = serializationProvider;
 	    createCorrelationId();
-        this.queryStringMap = new HashMap<String, String>();
-		parseQueryString(request);
+        this.queryStringMap = parseQueryString(request);
 		determineEffectiveHttpMethod(request);
 	}
 
@@ -340,12 +341,17 @@ public class Request
 	 */
 	public String getHeader(String name)
 	{
+		if (queryStringMap.containsKey(name))
+		{
+			return queryStringMap.get(name);
+		}
+
 		return httpRequest.headers().get(name);
 	}
 
 	/**
 	 * Gets the list of named headers from the request.
-	 * Returns null if the header name is not present.
+	 * Returns an empty list if the header name is not present.
 	 * <p/>
 	 * NOTE: because HTTP headers are handled by Netty, which processes them with
 	 *       QueryStringDecoder, HTTP headers are URL decoded. Also query-string
@@ -353,11 +359,12 @@ public class Request
 	 *       being set as headers on the request.
 	 * 
 	 * @param name
-	 * @return the requested list of headers, or null if 'name' doesn't exist as a header.
+	 * @return the requested list of headers, or an empty list if 'name' doesn't exist as a header.
 	 */
 	public List<String> getHeaders(String name)
 	{
-		return httpRequest.headers().getAll(name);
+		return Stream.concat(Stream.ofNullable(queryStringMap.get(name)),
+			httpRequest.headers().getAll(name).stream()).toList();
 	}
 	
 	/**
@@ -459,30 +466,7 @@ public class Request
 	 */
 	public String getBaseUrl()
 	{
-		String host = getXForwardedHost();
-		String scheme = getScheme();
-
-		if (host == null)
-		{
-			try
-			{
-				Forwarded forwarded = Forwarded.parse(getForwarded());
-				host = forwarded.getHost();
-
-				if (forwarded.hasProto()) scheme = forwarded.getProto();
-			}
-			catch (ForwardedParseError e)
-			{
-				e.printStackTrace();
-			}
-		}
-
-		if (host == null)
-		{
-			host = getHost();
-		}
-		
-		return String.format(URL_FORMAT, scheme, host);
+		return BaseUrlResolver.resolve(this).toString();
 	}
 
 	public String getForwarded()
@@ -572,6 +556,7 @@ public class Request
 	 * Get the value of the {format} header in the request.
 	 * 
 	 * @return
+	 * @deprecated .{format} on the URL is not recommended. Use Accept header instead.
 	 */
 	public String getFormat()
 	{
@@ -589,9 +574,9 @@ public class Request
 	}
 
 	/**
-	 * Get the referer header from the request.
+	 * Get the X-Forwarded-Host header from the request.
 	 * 
-	 * @return the referer header (as a string) or null if not present on the request.
+	 * @return the X-Forwarded-Host header (as a string) or null if not present on the request.
 	 */
 	public String getXForwardedHost()
 	{
@@ -655,8 +640,7 @@ public class Request
 	{
 		String header = getHeader(name);
 
-		if (header == null || header.trim().length() == 0 || value == null || value.trim().length() == 0)
-			return false;
+		if (header == null || header.isEmpty() || value == null || value.isEmpty()) return false;
 		
 		return header.trim().equalsIgnoreCase(value.trim());
 	}
@@ -740,7 +724,7 @@ public class Request
 	{
 		if (attachments == null)
 		{
-			attachments = new HashMap<String, Object>();
+			attachments = new HashMap<>();
 		}
 		
 		attachments.put(name, attachment);
@@ -770,26 +754,69 @@ public class Request
 	 * contains multiple of the same parameter name, the headers will contain them all, but the
 	 * queryStringMap will only contain the first one.  This will be fixed in a future release.
 	 */
-	private void parseQueryString(final HttpRequest request)
+	private Map<String, String> parseQueryString(final HttpRequest request)
 	{
-		if (!request.uri().contains("?")) return;
+		if (!request.uri().contains("?")) return Collections.emptyMap();
 
-		Map<String, List<String>> parameters = new QueryStringParser(request.uri(), true).getParameters();
+		Map<String, List<String>> parameters = decodeQueryString(request.uri());
 
-		if (parameters == null || parameters.isEmpty()) return;
+		if (parameters == null || parameters.isEmpty()) return Collections.emptyMap();
 
-		queryStringMap = new HashMap<String, String>(parameters.size());
+		Map<String, String> parameterMap = HashMap.newHashMap(parameters.size());
 		
 		for (Entry<String, List<String>> entry : parameters.entrySet())
 		{
 			String key = decode(entry.getKey());
-			queryStringMap.put(key, decode(entry.getValue().get(0)));
+			parameterMap.put(key, entry.getValue().get(0));
+		}
 
-			for (String value : entry.getValue())
+		return parameterMap;
+	}
+
+	private Map<String, List<String>> decodeQueryString(String uri)
+	{
+		try
+		{
+			return new QueryStringDecoder(uri).parameters();
+		}
+		catch (Exception e)
+		{
+			// Fallback for improperly encoded URIs
+			if (uri.contains("?"))
 			{
-                request.headers().add(key, decode(value));
+				String rawQuery = uri.substring(uri.indexOf('?') + 1);
+				String encodedQuery = encodeQueryParameters(rawQuery);
+				return new QueryStringDecoder("?" + encodedQuery).parameters();
+			}
+
+			return Collections.emptyMap();
+		}
+	}
+
+	private String encodeQueryParameters(String rawQuery)
+	{
+		String[] pairs = rawQuery.split("&");
+		StringBuilder encoded = new StringBuilder();
+
+		for (int i = 0; i < pairs.length; i++)
+		{
+			String[] keyValue = pairs[i].split("=", 2);
+			if (keyValue.length == 2)
+			{
+				encoded.append(encode(keyValue[0])).append("=").append(encode(keyValue[1]));
+			}
+			else
+			{
+				encoded.append(encode(keyValue[0]));
+			}
+
+			if (i < pairs.length - 1)
+			{
+				encoded.append("&");
 			}
 		}
+
+		return encoded.toString();
 	}
 
 	private String decode(String encoded)
@@ -804,6 +831,18 @@ public class Request
 		}
 	}
 
+	private String encode(String decoded)
+	{
+		try
+		{
+			return URLEncoder.encode(decoded, ContentType.ENCODING);
+		}
+		catch (Exception e)
+		{
+			return decoded;
+		}
+	}
+
 	/**
 	 * If the request HTTP method is post, allow a query string parameter to determine
 	 * the request HTTP method of the post (e.g. _method=DELETE or _method=PUT).  This
@@ -813,7 +852,7 @@ public class Request
 	{
 		if (!HttpMethod.POST.equals(request.method())) return;
 
-		String methodString = request.headers().get(Parameters.Query.METHOD_TUNNEL);
+		String methodString = getQueryStringMap().get(Parameters.Query.METHOD_TUNNEL);
 
 		if ("PUT".equalsIgnoreCase(methodString) || "DELETE".equalsIgnoreCase(methodString))
 		{
