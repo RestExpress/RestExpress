@@ -8,6 +8,14 @@ import java.util.Map;
 
 /**
  * Enables parsing of the HTTP Forwarded header (RFC7239).
+ * http://tools.ietf.org/html/rfc7239
+ * 
+ * Usage:
+ * Forwarded forwarded = Forwarded.parse(request.getHeader("Forwarded"));
+ * String forValue = forwarded.getFor();
+ * String byValue = forwarded.getBy();
+ * String hostValue = forwarded.getHost();
+ * String protoValue = forwarded.getProto();
  *  
  * @author tfredrich
  */
@@ -19,6 +27,15 @@ public class Forwarded
 	private static final String HOST_TOKEN = "host";
 	private Map<String, List<ForwardedPair>> parametersByToken;
 
+	// Indicates whether the order of elements is reversed (newest first) instead of the newest being left-most.
+	private boolean reversed;
+
+	private Forwarded(List<ForwardedPair> parameters, boolean reversed)
+	{
+		this(parameters);
+		this.reversed = reversed;
+	}
+	
 	private Forwarded(List<ForwardedPair> parameters)
 	{
 		super();
@@ -34,6 +51,11 @@ public class Forwarded
 			List<ForwardedPair> l = parameters.computeIfAbsent(p.getToken().toLowerCase(), e -> new ArrayList<>());
 			l.add(p);
 		});
+	}
+	public static Forwarded parse(String forwardedHeader, boolean reversed)
+	throws ForwardedParseError
+	{
+		return new Forwarded(parseElements(forwardedHeader), reversed);
 	}
 
 	public static Forwarded parse(String forwardedHeader)
@@ -78,9 +100,49 @@ public class Forwarded
 		return hasToken(FOR_TOKEN);
 	}
 
+	/**
+	 * Returns the host portion of the Forwarded header, if any.
+	 * Will include port if specified.
+	 * 
+	 * @return the host portion of the Forwarded header, or null if none.
+	 */
 	public String getHost()
 	{
 		return getLastValue(HOST_TOKEN);
+	}
+
+	/**
+	 * Returns the host portion of the host, if any, excluding any port portion.
+	 * 
+	 * @return the host portion of the host (without port), or null if none.
+	 */
+	public String getHostName()
+	{
+		String host = getHost();
+		
+		if (host != null && host.contains(":"))
+		{
+			return host.substring(0, host.indexOf(":"));
+		}
+		
+		return host;
+	}
+
+	/**
+	 * Returns the port portion of the host, if any.
+	 * 
+	 * @return the port portion of the host, or null if none.
+	 */
+	public String getHostPort()
+	{
+		String host = getHost();
+		
+		if (host != null && host.contains(":"))
+		{
+			return host.substring(host.indexOf(":") + 1);
+		}
+		
+		return null;
 	}
 
 	public boolean hasHost()
@@ -101,6 +163,12 @@ public class Forwarded
 	public String getLastValue(String token)
 	{
 		List<ForwardedPair> l = parametersByToken.get(token);
+		
+		if (reversed && l != null)
+		{
+			return l.get(0).getValue();
+		}
+
 		return (l != null ? l.get(l.size() - 1).getValue() : null);		
 	}
 
