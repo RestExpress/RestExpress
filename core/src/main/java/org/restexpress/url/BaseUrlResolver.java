@@ -1,9 +1,11 @@
 /**
  * 
  */
-package org.restexpress.domain;
+package org.restexpress.url;
 
 import org.restexpress.Request;
+import org.restexpress.domain.Forwarded;
+import org.restexpress.domain.ForwardedParseError;
 
 /**
  * BaseUrlResolver is a utility class for resolving the base URL of a request,
@@ -35,9 +37,10 @@ public class BaseUrlResolver
 		try
 		{
 			Forwarded forwarded = Forwarded.parse(request.getForwarded());
-			url.host = forwarded.getHostName();
-			url.scheme = forwarded.getProto();
-			url.port = forwarded.getHostPort();
+			String fullHost = forwarded.getFirstValue(Forwarded.HOST_TOKEN);
+			url.host = Forwarded.getHostName(fullHost);
+			url.scheme = forwarded.getFirstValue(Forwarded.PROTO_TOKEN);
+			url.port = Forwarded.getHostPort(fullHost);
 		}
 		catch (ForwardedParseError e)
 		{
@@ -70,7 +73,17 @@ public class BaseUrlResolver
 
 		if (!url.hasHost())
 		{
-			url.host = request.getHost();
+			String host = request.getHost();
+			
+			if (host != null && host.contains(":"))
+			{
+				url.host = host.substring(0, host.indexOf(":"));
+				url.port = host.substring(host.indexOf(":") + 1);
+			}
+			else
+			{
+				url.host = host;
+			}
 		}
 
 		return url;

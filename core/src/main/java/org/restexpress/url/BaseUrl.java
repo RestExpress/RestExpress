@@ -1,4 +1,4 @@
-package org.restexpress.domain;
+package org.restexpress.url;
 
 /**
  * BaseUrl is a value object; a simple data structure for holding the components of a base URL.

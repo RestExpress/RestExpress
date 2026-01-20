@@ -35,13 +35,13 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
 
-import org.restexpress.domain.BaseUrlResolver;
 import org.restexpress.exception.BadRequestException;
 import org.restexpress.pipeline.FileUploadHandler;
 import org.restexpress.route.Route;
 import org.restexpress.route.RouteResolver;
 import org.restexpress.serialization.SerializationProvider;
 import org.restexpress.serialization.SerializationSettings;
+import org.restexpress.url.BaseUrlResolver;
 import org.restexpress.url.QueryStringParser;
 
 import io.netty.buffer.ByteBuf;

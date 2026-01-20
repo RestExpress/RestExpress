@@ -2,6 +2,7 @@ package org.restexpress.domain;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,10 +22,11 @@ import java.util.Map;
  */
 public class Forwarded
 {
-	private static final String BY_TOKEN = "by";
-	private static final String FOR_TOKEN = "for";
-	private static final String PROTO_TOKEN = "proto";
-	private static final String HOST_TOKEN = "host";
+	public static final String BY_TOKEN = "by";
+	public static final String FOR_TOKEN = "for";
+	public static final String PROTO_TOKEN = "proto";
+	public static final String HOST_TOKEN = "host";
+
 	private Map<String, List<ForwardedPair>> parametersByToken;
 
 	// Indicates whether the order of elements is reversed (newest first) instead of the newest being left-most.
@@ -39,7 +41,7 @@ public class Forwarded
 	private Forwarded(List<ForwardedPair> parameters)
 	{
 		super();
-		this.parametersByToken = new HashMap<>(parameters.size());
+		this.parametersByToken = HashMap.newHashMap(parameters.size());
 		addAll(parameters, parametersByToken);
 	}
 
@@ -80,9 +82,9 @@ public class Forwarded
 		return pairs;
 	}
 
-	public String getBy()
+	public List<String> getBy()
 	{
-		return getLastValue(BY_TOKEN);
+		return getValues(BY_TOKEN);
 	}
 
 	public boolean hasBy()
@@ -90,9 +92,9 @@ public class Forwarded
 		return hasToken(BY_TOKEN);
 	}
 
-	public String getFor()
+	public List<String> getFor()
 	{
-		return getLastValue(FOR_TOKEN);
+		return getValues(FOR_TOKEN);
 	}
 
 	public boolean hasFor()
@@ -106,9 +108,9 @@ public class Forwarded
 	 * 
 	 * @return the host portion of the Forwarded header, or null if none.
 	 */
-	public String getHost()
+	public List<String> getHost()
 	{
-		return getLastValue(HOST_TOKEN);
+		return getValues(HOST_TOKEN);
 	}
 
 	/**
@@ -116,10 +118,8 @@ public class Forwarded
 	 * 
 	 * @return the host portion of the host (without port), or null if none.
 	 */
-	public String getHostName()
+	public static String getHostName(String host)
 	{
-		String host = getHost();
-		
 		if (host != null && host.contains(":"))
 		{
 			return host.substring(0, host.indexOf(":"));
@@ -133,10 +133,8 @@ public class Forwarded
 	 * 
 	 * @return the port portion of the host, or null if none.
 	 */
-	public String getHostPort()
+	public static String getHostPort(String host)
 	{
-		String host = getHost();
-		
 		if (host != null && host.contains(":"))
 		{
 			return host.substring(host.indexOf(":") + 1);
@@ -150,9 +148,9 @@ public class Forwarded
 		return hasToken(HOST_TOKEN);
 	}
 
-	public String getProto()
+	public List<String> getProto()
 	{
-		return getLastValue(PROTO_TOKEN);
+		return getValues(PROTO_TOKEN);
 	}
 
 	public boolean hasProto()
@@ -170,6 +168,32 @@ public class Forwarded
 		}
 
 		return (l != null ? l.get(l.size() - 1).getValue() : null);		
+	}
+
+	public String getFirstValue(String token)
+	{
+		List<ForwardedPair> l = parametersByToken.get(token);
+		
+		if (reversed && l != null)
+		{
+			return l.get(l.size() - 1).getValue();
+		}
+
+		return (l != null ? l.get(0).getValue() : null);		
+	}
+
+	public List<String> getValues(String token)
+	{
+		if (!hasToken(token)) return Collections.emptyList();
+
+		List<String> values = parametersByToken.get(token).stream().map(p -> p.getValue()).toList();
+
+		if (reversed)
+		{
+			values.sort(Comparator.reverseOrder());
+		}
+
+		return values;
 	}
 
 	public boolean hasToken(String token)
