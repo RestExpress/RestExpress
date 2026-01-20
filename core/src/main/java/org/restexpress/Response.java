@@ -39,7 +39,7 @@ public class Response
 
 	private HttpResponseStatus responseCode = OK;
 	private Object body;
-	private Map<String, List<String>> headers = new HashMap<String, List<String>>();
+	private Map<String, List<String>> headers = new HashMap<>();
 	private boolean isSerialized = true;
 	private Throwable exception = null;
 	private SerializationSettings serializationSettings;
@@ -118,7 +118,7 @@ public class Response
 		
 		if (list == null)
 		{
-			list = new ArrayList<String>();
+			list = new ArrayList<>();
 			headers.put(name, list);
 		}
 		
