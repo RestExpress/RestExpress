@@ -772,13 +772,13 @@ public class RestExpress
 		bootstrap.option(ChannelOption.SO_REUSEADDR, shouldReuseAddress());
 		bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, getConnectTimeoutMillis());
 		bootstrap.option(ChannelOption.SO_RCVBUF, getReceiveBufferSize());
-		bootstrap.option(ChannelOption.RCVBUF_ALLOCATOR, new AdaptiveRecvByteBufAllocator());
+		bootstrap.option(ChannelOption.RECVBUF_ALLOCATOR, new AdaptiveRecvByteBufAllocator());
 
 		bootstrap.childOption(ChannelOption.SO_KEEPALIVE, useKeepAlive());
 		bootstrap.childOption(ChannelOption.TCP_NODELAY, useTcpNoDelay());
 		bootstrap.childOption(ChannelOption.SO_LINGER, getSoLinger());
 		bootstrap.childOption(ChannelOption.ALLOCATOR, new PooledByteBufAllocator(true));
-		bootstrap.option(ChannelOption.RCVBUF_ALLOCATOR, new AdaptiveRecvByteBufAllocator());
+		bootstrap.option(ChannelOption.RECVBUF_ALLOCATOR, new AdaptiveRecvByteBufAllocator());
 		bootstrap.childOption(ChannelOption.SO_RCVBUF, getReceiveBufferSize());
 		bootstrap.childOption(ChannelOption.SO_REUSEADDR, shouldReuseAddress());
 	}
