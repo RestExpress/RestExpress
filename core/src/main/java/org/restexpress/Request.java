@@ -20,8 +20,6 @@ package org.restexpress;
 import java.io.File;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
-import java.net.URI;
-import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.ByteBuffer;
