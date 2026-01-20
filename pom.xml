@@ -29,12 +29,6 @@
 		</dependency>
 	</dependencies>
 
-	<parent>
-		<groupId>org.sonatype.oss</groupId>
-		<artifactId>oss-parent</artifactId>
-		<version>9</version>
-	</parent>
-
 	<licenses>
 		<license>
 			<name>The Apache Software License, Version 2.0</name>
@@ -90,9 +84,20 @@
 				<artifactId>maven-release-plugin</artifactId>
 			</plugin>
 			<plugin>
+				<groupId>org.sonatype.central</groupId>
+				<artifactId>central-publishing-maven-plugin</artifactId>
+				<version>0.9.0</version>
+				<extensions>true</extensions>
+				<configuration>
+					<publishingServerId>central</publishingServerId>
+					<autoPublish>true</autoPublish>
+					<waitUntil>published</waitUntil>
+				</configuration>
+			</plugin>
+			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-gpg-plugin</artifactId>
-				<version>3.0.1</version>
+				<version>3.2.8</version>
 				<executions>
 					<execution>
 						<id>sign-artifacts</id>
@@ -100,6 +105,9 @@
 						<goals>
 							<goal>sign</goal>
 						</goals>
+						<configuration>
+							<passphraseEnvName>MAVEN_GPG_PASSPHRASE</passphraseEnvName>
+						</configuration>
 					</execution>
 				</executions>
 			</plugin>
