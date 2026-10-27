@@ -439,7 +439,7 @@ public class RestExpressTest
 			.action("upload", HttpMethod.POST);
 		re.bind(TEST_PORT);
 
-		HttpClient client = HttpClientBuilder.create().build();
+		CloseableHttpClient client = HttpClientBuilder.create().build();
 		int port = nextPort();
 		String testUrl = createUrl(TEST_URL_PATTERN, port);
 		HttpPost post = new HttpPost(testUrl);
@@ -466,6 +466,7 @@ public class RestExpressTest
 		finally
 		{
 			post.releaseConnection();
+			client.close();
 		}
 	}
 
