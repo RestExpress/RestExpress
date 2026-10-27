@@ -20,10 +20,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
-import org.restexpress.common.query.FilterCallback;
-import org.restexpress.common.query.FilterComponent;
-import org.restexpress.common.query.FilterOperator;
-import org.restexpress.common.query.QueryFilter;
 
 /**
  * @author toddf
@@ -39,15 +35,11 @@ public class QueryFilterTest
 		assertFalse(f.hasFilters());
 		f.addCriteria("test", FilterOperator.CONTAINS, "something");
 		assertTrue(f.hasFilters());
-		
-		f.iterate(new FilterCallback()
-		{
-			@Override
-			public void filterOn(FilterComponent component)
-			{
-				assertEquals("test", component.getField());
-				assertEquals("something", component.getValue());
-			}
+
+		f.iterate(c -> {
+			assertEquals("test", c.getField());
+			assertEquals(FilterOperator.CONTAINS, c.getOperator());
+			assertEquals("something", c.getValue());
 		});
 	}
 }
