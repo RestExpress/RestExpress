@@ -11,6 +11,11 @@ Born to be simple, only three things are required to wire up a service:
 
 See: https://github.com/RestExpress/RestExpress-Archetype to get started (there is a README there).
 
+Project Roadmap
+===============
+
+See [ROADMAP.md](ROADMAP.md) for the modernization, OpenAPI, MCP, and production-readiness roadmap.
+
 Maven Usage
 ===========
 Stable:
