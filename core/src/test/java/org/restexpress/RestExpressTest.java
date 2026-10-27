@@ -15,18 +15,18 @@
 */
 package org.restexpress;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.BindException;
-
 import java.util.UUID;
+
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
@@ -38,11 +38,10 @@ import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.entity.mime.content.FileBody;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.AfterClass;
 import org.junit.Test;
 import org.restexpress.exception.NoRoutesDefinedException;
-import org.restexpress.pipeline.FileUploadHandler;
 
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpMethod;
@@ -54,7 +53,7 @@ import io.netty.handler.codec.http.HttpMethod;
  */
 public class RestExpressTest
 {
-	private static final CloseableHttpClient CLIENT = new DefaultHttpClient();
+	private static final CloseableHttpClient CLIENT = HttpClientBuilder.create().build();
 	private static final String TEST_PATH = "/restexpress/test1";
 	private static final int TEST_PORT = 8901;
 	private static final String TEST_URL_PATTERN = "http://localhost:%s" + TEST_PATH;
@@ -440,7 +439,7 @@ public class RestExpressTest
 			.action("upload", HttpMethod.POST);
 		re.bind(TEST_PORT);
 
-		HttpClient client = new DefaultHttpClient();
+		HttpClient client = HttpClientBuilder.create().build();
 		int port = nextPort();
 		String testUrl = createUrl(TEST_URL_PATTERN, port);
 		HttpPost post = new HttpPost(testUrl);
@@ -454,10 +453,10 @@ public class RestExpressTest
 		ab.addPart("upload", fileBody);
 		HttpEntity entity = ab.build();
 		post.setEntity(entity);
-		HttpResponse response = (HttpResponse) client.execute(post);
 
 		try
 		{
+			HttpResponse response = (HttpResponse) client.execute(post);
 			assertEquals(201, response.getStatusLine().getStatusCode());
 			File f = controller.uploaded;
 			assertTrue(f.exists());
