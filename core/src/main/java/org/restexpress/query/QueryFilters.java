@@ -92,7 +92,7 @@ public abstract class QueryFilters
 			return new QueryFilter();
 		}
 
-		List<FilterComponent> filters = new ArrayList<FilterComponent>(nameValues.length);
+		List<FilterComponent> filters = new ArrayList<>(nameValues.length);
 
 		for (String nameValue : nameValues)
 		{
