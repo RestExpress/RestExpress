@@ -21,9 +21,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import org.junit.Test;
-import org.restexpress.common.query.OrderCallback;
-import org.restexpress.common.query.OrderComponent;
-import org.restexpress.common.query.QueryOrder;
 
 /**
  * @author toddf
@@ -39,7 +36,7 @@ public class QueryOrderTest
 		assertFalse(o.isSorted());
 		o.addSort("name", "-zip");
 		assertTrue(o.isSorted());
-		
+
 		o.iterate(new OrderCallback()
 		{
 			int i = 0;

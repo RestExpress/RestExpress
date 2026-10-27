@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.Test;
-import org.restexpress.common.util.StringUtils;
 
 /**
  * @author toddf
