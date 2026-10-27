@@ -9,6 +9,10 @@
 	<version>0.12.0-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
+	<properties>
+		<jdk.version>21</jdk.version>
+	</properties>
+
 	<modules>
 		<module>common</module>
 		<module>core</module>
@@ -25,12 +29,6 @@
 		</dependency>
 	</dependencies>
 
-	<parent>
-		<groupId>org.sonatype.oss</groupId>
-		<artifactId>oss-parent</artifactId>
-		<version>9</version>
-	</parent>
-
 	<licenses>
 		<license>
 			<name>The Apache Software License, Version 2.0</name>
@@ -46,8 +44,8 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.8.1</version>
 				<configuration>
-					<source>1.8</source>
-					<target>1.8</target>
+					<source>${jdk.version}</source>
+					<target>${jdk.version}</target>
 				</configuration>
 			</plugin>
 			<plugin>
@@ -76,7 +74,7 @@
 						</goals>
 						<configuration>
 							<doclint>none</doclint>
-							<source>1.8</source>
+							<source>${jdk.version}</source>
 						</configuration>
 					</execution>
 				</executions>
@@ -86,9 +84,20 @@
 				<artifactId>maven-release-plugin</artifactId>
 			</plugin>
 			<plugin>
+				<groupId>org.sonatype.central</groupId>
+				<artifactId>central-publishing-maven-plugin</artifactId>
+				<version>0.9.0</version>
+				<extensions>true</extensions>
+				<configuration>
+					<publishingServerId>central</publishingServerId>
+					<autoPublish>true</autoPublish>
+					<waitUntil>published</waitUntil>
+				</configuration>
+			</plugin>
+			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-gpg-plugin</artifactId>
-				<version>3.0.1</version>
+				<version>3.2.8</version>
 				<executions>
 					<execution>
 						<id>sign-artifacts</id>
@@ -96,6 +105,9 @@
 						<goals>
 							<goal>sign</goal>
 						</goals>
+						<configuration>
+							<passphraseEnvName>MAVEN_GPG_PASSPHRASE</passphraseEnvName>
+						</configuration>
 					</execution>
 				</executions>
 			</plugin>

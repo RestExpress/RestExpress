@@ -43,7 +43,7 @@ public class QueryFilter
 	public QueryFilter(List<FilterComponent> filters)
 	{
 		this();
-		this.filters = new ArrayList<FilterComponent>(filters);
+		this.filters = new ArrayList<>(filters);
 	}
 
 	/**
@@ -57,7 +57,7 @@ public class QueryFilter
 	{
 		if (filters == null)
 		{
-			filters = new ArrayList<FilterComponent>();
+			filters = new ArrayList<>();
 		}
 
 		filters.add(new FilterComponent(name, operator, value));

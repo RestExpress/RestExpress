@@ -346,7 +346,7 @@ public class DefaultRequestHandlerTest
 	public void shouldSetJSONContentType()
 	throws Exception
 	{
-		sendGetEvent("/serializedString.json?returnValue=raw string");
+		sendGetEvent("/serializedString.json?returnValue=raw+string");
 		assertEquals(0, observer.getExceptionCount());
 		assertEquals(1, observer.getReceivedCount());
 		assertEquals(1, observer.getCompleteCount());
@@ -383,6 +383,7 @@ public class DefaultRequestHandlerTest
 		catch(Throwable t)
 		{
 			System.out.println(t.getMessage());
+			t.printStackTrace();
 		}
     }
 

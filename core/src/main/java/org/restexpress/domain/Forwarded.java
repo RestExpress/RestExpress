@@ -2,27 +2,46 @@ package org.restexpress.domain;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
  * Enables parsing of the HTTP Forwarded header (RFC7239).
+ * http://tools.ietf.org/html/rfc7239
+ * 
+ * Usage:
+ * Forwarded forwarded = Forwarded.parse(request.getHeader("Forwarded"));
+ * String forValue = forwarded.getFor();
+ * String byValue = forwarded.getBy();
+ * String hostValue = forwarded.getHost();
+ * String protoValue = forwarded.getProto();
  *  
  * @author tfredrich
  */
 public class Forwarded
 {
-	private static final String BY_TOKEN = "by";
-	private static final String FOR_TOKEN = "for";
-	private static final String PROTO_TOKEN = "proto";
-	private static final String HOST_TOKEN = "host";
+	public static final String BY_TOKEN = "by";
+	public static final String FOR_TOKEN = "for";
+	public static final String PROTO_TOKEN = "proto";
+	public static final String HOST_TOKEN = "host";
+
 	private Map<String, List<ForwardedPair>> parametersByToken;
 
+	// Indicates whether the order of elements is reversed (newest first) instead of the newest being left-most.
+	private boolean reversed;
+
+	private Forwarded(List<ForwardedPair> parameters, boolean reversed)
+	{
+		this(parameters);
+		this.reversed = reversed;
+	}
+	
 	private Forwarded(List<ForwardedPair> parameters)
 	{
 		super();
-		this.parametersByToken = new HashMap<>(parameters.size());
+		this.parametersByToken = HashMap.newHashMap(parameters.size());
 		addAll(parameters, parametersByToken);
 	}
 
@@ -34,6 +53,11 @@ public class Forwarded
 			List<ForwardedPair> l = parameters.computeIfAbsent(p.getToken().toLowerCase(), e -> new ArrayList<>());
 			l.add(p);
 		});
+	}
+	public static Forwarded parse(String forwardedHeader, boolean reversed)
+	throws ForwardedParseError
+	{
+		return new Forwarded(parseElements(forwardedHeader), reversed);
 	}
 
 	public static Forwarded parse(String forwardedHeader)
@@ -58,9 +82,9 @@ public class Forwarded
 		return pairs;
 	}
 
-	public String getBy()
+	public List<String> getBy()
 	{
-		return getLastValue(BY_TOKEN);
+		return getValues(BY_TOKEN);
 	}
 
 	public boolean hasBy()
@@ -68,9 +92,9 @@ public class Forwarded
 		return hasToken(BY_TOKEN);
 	}
 
-	public String getFor()
+	public List<String> getFor()
 	{
-		return getLastValue(FOR_TOKEN);
+		return getValues(FOR_TOKEN);
 	}
 
 	public boolean hasFor()
@@ -78,9 +102,45 @@ public class Forwarded
 		return hasToken(FOR_TOKEN);
 	}
 
-	public String getHost()
+	/**
+	 * Returns the host portion of the Forwarded header, if any.
+	 * Will include port if specified.
+	 * 
+	 * @return the host portion of the Forwarded header, or null if none.
+	 */
+	public List<String> getHost()
 	{
-		return getLastValue(HOST_TOKEN);
+		return getValues(HOST_TOKEN);
+	}
+
+	/**
+	 * Returns the host portion of the host, if any, excluding any port portion.
+	 * 
+	 * @return the host portion of the host (without port), or null if none.
+	 */
+	public static String getHostName(String host)
+	{
+		if (host != null && host.contains(":"))
+		{
+			return host.substring(0, host.indexOf(":"));
+		}
+		
+		return host;
+	}
+
+	/**
+	 * Returns the port portion of the host, if any.
+	 * 
+	 * @return the port portion of the host, or null if none.
+	 */
+	public static String getHostPort(String host)
+	{
+		if (host != null && host.contains(":"))
+		{
+			return host.substring(host.indexOf(":") + 1);
+		}
+		
+		return null;
 	}
 
 	public boolean hasHost()
@@ -88,9 +148,9 @@ public class Forwarded
 		return hasToken(HOST_TOKEN);
 	}
 
-	public String getProto()
+	public List<String> getProto()
 	{
-		return getLastValue(PROTO_TOKEN);
+		return getValues(PROTO_TOKEN);
 	}
 
 	public boolean hasProto()
@@ -101,7 +161,39 @@ public class Forwarded
 	public String getLastValue(String token)
 	{
 		List<ForwardedPair> l = parametersByToken.get(token);
+		
+		if (reversed && l != null)
+		{
+			return l.get(0).getValue();
+		}
+
 		return (l != null ? l.get(l.size() - 1).getValue() : null);		
+	}
+
+	public String getFirstValue(String token)
+	{
+		List<ForwardedPair> l = parametersByToken.get(token);
+		
+		if (reversed && l != null)
+		{
+			return l.get(l.size() - 1).getValue();
+		}
+
+		return (l != null ? l.get(0).getValue() : null);		
+	}
+
+	public List<String> getValues(String token)
+	{
+		if (!hasToken(token)) return Collections.emptyList();
+
+		List<String> values = parametersByToken.get(token).stream().map(p -> p.getValue()).toList();
+
+		if (reversed)
+		{
+			values.sort(Comparator.reverseOrder());
+		}
+
+		return values;
 	}
 
 	public boolean hasToken(String token)
