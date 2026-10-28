@@ -77,6 +77,7 @@ Change History/Release Notes:
 
 Release 0.12.0-SNAPSHOT (in master)
 -----------------------------------
+* Fixed multipart upload double release, isolated upload state per connection, and released resources on failures and disconnects.
 * **BREAKING CHANGE** Builds require JDK 21 or newer.
 * **BREAKING CHANGE** Added Request.getScheme() which makes a guess re. http/https from host. Altered Request.getUrl() to use it instead of getProtocol().
 * **BREAKING CHANGE** Removed XML support. No more XStream!

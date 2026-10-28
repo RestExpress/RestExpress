@@ -47,13 +47,11 @@ import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpObject;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.LastHttpContent;
-import io.netty.handler.codec.http.multipart.Attribute;
 import io.netty.handler.codec.http.multipart.DefaultHttpDataFactory;
 import io.netty.handler.codec.http.multipart.FileUpload;
 import io.netty.handler.codec.http.multipart.HttpDataFactory;
 import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
 import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder.EndOfDataDecoderException;
-import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder.ErrorDataDecoderException;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData.HttpDataType;
 import io.netty.util.AttributeKey;
@@ -79,15 +77,19 @@ extends SimpleChannelInboundHandler<HttpObject>
 	private final RouteResolver routeResolver;
 	private final SerializationProvider serializationProvider;
 	private HttpResponseWriter responseWriter;
-	private HttpPostRequestDecoder decoder;
+	private static final AttributeKey<UploadState> UPLOAD_KEY = AttributeKey.valueOf(FileUploadHandler.class, "upload");
 	private static final HttpDataFactory factory = new DefaultHttpDataFactory(DefaultHttpDataFactory.MINSIZE);
-	private File filePath;
 	private boolean shouldEnforceHttpSpec = true;
 	private static SerializationProvider DEFAULT_SERIALIZATION_PROVIDER = null;
 
-	// Save a reference to request and the context since we accumulate chunks in between
-	private FullHttpRequest fullHttpRequest = null;
-	private MessageContext messageContext = null;
+	// A handler is shared across connections; upload resources belong to one channel.
+	private static class UploadState
+	{
+		private HttpPostRequestDecoder decoder;
+		private File filePath;
+		private FullHttpRequest fullHttpRequest;
+		private MessageContext messageContext;
+	}
 	private ExceptionMapping exceptionMap = new DefaultExceptionMapper();
 
 	public FileUploadHandler(RouteResolver routeResolver, SerializationProvider serializationProvider, HttpResponseWriter responseWriter, boolean enforceHttpSpec)
@@ -115,116 +117,144 @@ extends SimpleChannelInboundHandler<HttpObject>
 		}
 		catch (Exception e)
 		{
-			e.printStackTrace();
+			try
+			{
+				reset(channelHandlerContext);
+			}
+			catch (Exception cleanupFailure)
+			{
+				e.addSuppressed(cleanupFailure);
+			}
+			channelHandlerContext.fireExceptionCaught(e);
+			channelHandlerContext.close();
 		}
 	}
 
-	private void processRequest(ChannelHandlerContext channelHandlerContext, HttpObject object)
+	private void processRequest(ChannelHandlerContext ctx, HttpObject object)
 	{
+		UploadState state = ctx.attr(UPLOAD_KEY).get();
+
 		if (object instanceof HttpRequest)
 		{
+			reset(ctx);
+			state = new UploadState();
+			ctx.attr(UPLOAD_KEY).set(state);
 			HttpRequest request = (HttpRequest) object;
-			fullHttpRequest = new DefaultFullHttpRequest(request.protocolVersion(), request.method(), request.uri());
-			fullHttpRequest.headers().set(request.headers());
-			String uuid = UUID.randomUUID().toString();
-			filePath = Paths.get(System.getProperty("java.io.tmpdir"), uuid).toFile();
-			messageContext = createInitialContext(channelHandlerContext, fullHttpRequest);
-
-			try
-			{
-				decoder = new HttpPostRequestDecoder(factory, request);
-			}
-			catch (ErrorDataDecoderException e1)
-			{
-				e1.printStackTrace();
-				channelHandlerContext.channel().close();
-				return;
-			}
+			state.fullHttpRequest = new DefaultFullHttpRequest(request.protocolVersion(), request.method(), request.uri());
+			state.fullHttpRequest.headers().set(request.headers());
+			state.filePath = Paths.get(System.getProperty("java.io.tmpdir"), UUID.randomUUID().toString()).toFile();
+			state.messageContext = createInitialContext(ctx, state.fullHttpRequest);
+			state.decoder = new HttpPostRequestDecoder(factory, request);
 		}
 
 		if (object instanceof HttpContent)
 		{
-			HttpContent chunk = (HttpContent) object;
-			decoder.offer(chunk);
-			readChunk();
+			if (state == null || state.decoder == null)
+			{
+				throw new IllegalStateException("Upload content received without a request");
+			}
+			state.decoder.offer((HttpContent) object);
+			readChunk(state);
 
 			if (object instanceof LastHttpContent)
 			{
-				prepareResponse(channelHandlerContext);
-				reset();
+				try
+				{
+					prepareResponse(ctx, state);
+				}
+				finally
+				{
+					reset(ctx);
+				}
 			}
 		}
 	}
 
-	private void prepareResponse(ChannelHandlerContext channelHandlerContext)
+	private void prepareResponse(ChannelHandlerContext channelHandlerContext, UploadState state)
 	{
-		resolveRoute(messageContext);
-		resolveResponseProcessor(messageContext);
-		messageContext.getRequest().putAttachment(FILE_ATTACHMENT_KEY, filePath.getAbsolutePath());
-		Object result = messageContext.getAction().invoke(messageContext.getRequest(), messageContext.getResponse());
+		resolveRoute(state.messageContext);
+		resolveResponseProcessor(state.messageContext);
+		state.messageContext.getRequest().putAttachment(FILE_ATTACHMENT_KEY, state.filePath.getAbsolutePath());
+		Object result = state.messageContext.getAction().invoke(state.messageContext.getRequest(), state.messageContext.getResponse());
 
 		if (result != null)
 		{
-			messageContext.getResponse().setBody(result);
+			state.messageContext.getResponse().setBody(result);
 		}
 
-		serializeResponse(messageContext, false);
-		enforceHttpSpecification(messageContext);
-		writeResponse(channelHandlerContext, messageContext);
+		serializeResponse(state.messageContext, false);
+		enforceHttpSpecification(state.messageContext);
+		writeResponse(channelHandlerContext, state.messageContext);
 	}
 
-	private void reset()
+	private void reset(ChannelHandlerContext ctx)
 	{
-		// destroy the decoder to release all resources
-		decoder.destroy();
-		decoder = null;
-		fullHttpRequest = null;
-		messageContext = null;
+		UploadState state = ctx.attr(UPLOAD_KEY).getAndSet(null);
+		if (state == null) return;
+		ctx.attr(CONTEXT_KEY).set(null);
+		try
+		{
+			if (state.decoder != null) state.decoder.destroy();
+		}
+		finally
+		{
+			if (state.fullHttpRequest != null) state.fullHttpRequest.release();
+		}
 	}
 
-	private void readChunk()
+	@Override
+	public void channelInactive(ChannelHandlerContext ctx) throws Exception
 	{
 		try
 		{
-			while (decoder.hasNext())
+			reset(ctx);
+		}
+		finally
+		{
+			super.channelInactive(ctx);
+		}
+	}
+
+	@Override
+	public void handlerRemoved(ChannelHandlerContext ctx) throws Exception
+	{
+		reset(ctx);
+		super.handlerRemoved(ctx);
+	}
+
+	@Override
+	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception
+	{
+		try
+		{
+			reset(ctx);
+		}
+		finally
+		{
+			ctx.fireExceptionCaught(cause);
+			ctx.close();
+		}
+	}
+
+	private void readChunk(UploadState state)
+	{
+		try
+		{
+			while (state.decoder.hasNext())
 			{
-				InterfaceHttpData data = decoder.next();
-				if (data != null)
-				{
-					try
-					{
-						writeData(data);
-					}
-					finally
-					{
-						data.release();
-					}
-				}
+				InterfaceHttpData data = state.decoder.next();
+				if (data != null) writeData(data, state);
 			}
 		}
 		catch (EndOfDataDecoderException e)
 		{
-			e.printStackTrace();
+			// Normal end of multipart input. The decoder owns and releases its data.
 		}
 	}
 
-	private void writeData(InterfaceHttpData data)
+	private void writeData(InterfaceHttpData data, UploadState state)
 	{
-		if (data.getHttpDataType() == HttpDataType.Attribute)
-		{
-			Attribute attribute = (Attribute) data;
-			String value;
-			try
-			{
-				value = attribute.getValue();
-			}
-			catch (IOException e)
-			{
-				e.printStackTrace();
-			}
-
-		}
-		else
+		if (data.getHttpDataType() == HttpDataType.FileUpload)
 		{
 			FileUpload fileUpload = (FileUpload) data;
 
@@ -232,11 +262,14 @@ extends SimpleChannelInboundHandler<HttpObject>
 			{
 				try
 				{
-					fileUpload.renameTo(filePath);
+					if (!fileUpload.renameTo(state.filePath))
+					{
+						throw new IOException("Unable to move uploaded file");
+					}
 				}
 				catch (IOException e)
 				{
-					e.printStackTrace();
+					throw new IllegalStateException("Unable to store multipart upload", e);
 				}
 			}
 		}
