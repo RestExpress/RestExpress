@@ -35,6 +35,7 @@ Its primary differentiators should be:
 ### R1. Modernize the runtime
 
 - [x] Select Java 21 as the minimum supported JDK; document the requirement and compile against the Java 21 release API.
+- [x] Migrate tests to JUnit 5.
 - [ ] Upgrade Netty, Jackson, Maven plugins, JUnit, and other security-sensitive dependencies.
 - [ ] Remove obsolete Java 6/7 assumptions and replace deprecated APIs.
 - [ ] Document supported JDK, Maven, and dependency versions in a compatibility matrix.
@@ -66,7 +67,6 @@ Its primary differentiators should be:
 
 ### R4. Strengthen testing
 
-- [ ] Migrate tests to JUnit 5.
 - [ ] Add HTTP integration tests against a real RestExpress server.
 - [ ] Expand route matching, serialization, exception mapping, malformed input, concurrency, and shutdown coverage.
 - [ ] Add compatibility tests for supported JDKs and modules.
