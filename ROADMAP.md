@@ -34,7 +34,7 @@ Its primary differentiators should be:
 
 ### R1. Modernize the runtime
 
-- [ ] Select and document the minimum supported JDK, initially Java 17, with Java 21 included in CI.
+- [x] Select Java 21 as the minimum supported JDK; document the requirement and compile against the Java 21 release API.
 - [ ] Upgrade Netty, Jackson, Maven plugins, JUnit, and other security-sensitive dependencies.
 - [ ] Remove obsolete Java 6/7 assumptions and replace deprecated APIs.
 - [ ] Document supported JDK, Maven, and dependency versions in a compatibility matrix.
@@ -344,7 +344,7 @@ These items should be scheduled with the roadmap work that first requires them:
 
 | Release | Primary outcome |
 | --- | --- |
-| `0.12` | Java 17/21 build baseline, upgraded dependencies, unified CI, current documentation, stronger tests |
+| `0.12` | Java 21 build baseline, upgraded dependencies, unified CI, current documentation, stronger tests |
 | `0.13` | Shared operation metadata, OpenAPI 3.1, optional Swagger UI, project CLI, typed configuration, experimental MCP |
 | `0.14` | OpenTelemetry, Micrometer, health endpoints, graceful draining, initial production MCP integration |
 | `0.15` | OIDC/JWT, limits, resilience, stable asynchronous handlers, stable and governed MCP server API |
@@ -356,7 +356,7 @@ The following should not take precedence over runtime modernization, compatibili
 
 - Building a dependency-injection container.
 - Building a proprietary ORM.
-- Native-image support before Java 17/21 support is solid.
+- Native-image support before Java 21 support is solid.
 - Adding more databases before existing persistence modules have clear support levels and tests.
 - GraphQL without demonstrated user demand.
 - Maintaining every historical serialization format indefinitely.

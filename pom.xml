@@ -10,7 +10,8 @@
 	<packaging>pom</packaging>
 
 	<properties>
-		<jdk.version>21</jdk.version>
+		<maven.compiler.release>21</maven.compiler.release>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 
 	<modules>
@@ -44,8 +45,7 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.8.1</version>
 				<configuration>
-					<source>${jdk.version}</source>
-					<target>${jdk.version}</target>
+					<release>${maven.compiler.release}</release>
 				</configuration>
 			</plugin>
 			<plugin>
@@ -74,7 +74,7 @@
 						</goals>
 						<configuration>
 							<doclint>none</doclint>
-							<source>${jdk.version}</source>
+							<source>${maven.compiler.release}</source>
 						</configuration>
 					</execution>
 				</executions>
