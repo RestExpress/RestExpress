@@ -34,7 +34,6 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 import org.restexpress.common.query.QueryRange;
-import org.restexpress.pipeline.SimpleConsoleLogMessageObserver;
 import org.restexpress.postprocessor.TestPostprocessor;
 import org.restexpress.preprocessor.ErrorPreprocessor;
 import org.restexpress.response.ErrorResponseWrapper;
@@ -118,7 +117,6 @@ public class AltRestExpressServerTest
 			.action("update", HttpMethod.PUT);
 		server.uri("/unserialized", new StringTestController())
 			.noSerialization();
-		server.addMessageObserver(new SimpleConsoleLogMessageObserver());
 
 		server.alias("littleObject", LittleO.class);
 		return server;

@@ -18,6 +18,8 @@ package org.restexpress.pipeline;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.List;
@@ -336,7 +338,18 @@ public class DefaultRequestHandlerTest
 		messageHandler.addFinallyProcessor(p1);
 		messageHandler.addFinallyProcessor(p2);
 		messageHandler.addFinallyProcessor(p3);
-		sendGetEvent("/foo");
+		ByteArrayOutputStream errors = new ByteArrayOutputStream();
+		PrintStream originalError = System.err;
+		try (PrintStream capturedError = new PrintStream(errors))
+		{
+			System.setErr(capturedError);
+			sendGetEvent("/foo");
+		}
+		finally
+		{
+			System.setErr(originalError);
+		}
+		assertEquals(3, errors.toString().split("java.lang.RuntimeException: RuntimeException thrown", -1).length - 1);
 		assertEquals(2, p1.getCallCount());
 		assertEquals(1, p2.getCallCount());
 		assertEquals(1, p3.getCallCount());

@@ -23,7 +23,6 @@ import org.apache.http.util.EntityUtils;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
-import org.restexpress.pipeline.SimpleConsoleLogMessageObserver;
 
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpMethod;
@@ -55,7 +54,6 @@ public class ServerNoCompressionTest
 
 		server.uri(ECHO_PATTERN, echoTestController)
 			.action("update", HttpMethod.PUT);
-		server.addMessageObserver(new SimpleConsoleLogMessageObserver());
 
 		server.alias("littleObject", LittleO.class);
 		return server;

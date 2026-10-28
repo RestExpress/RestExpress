@@ -34,7 +34,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.restexpress.common.query.QueryRange;
 import org.restexpress.domain.JsendResultWrapper;
-import org.restexpress.pipeline.SimpleConsoleLogMessageObserver;
 import org.restexpress.response.JsendResponseWrapper;
 import org.restexpress.serialization.AbstractSerializationProvider;
 import org.restexpress.serialization.DefaultSerializationProvider;
@@ -108,7 +107,6 @@ public class RestExpressServerTest
 			.action("update", HttpMethod.PUT);
 		server.uri("/unserialized", new StringTestController())
 			.noSerialization();
-		server.addMessageObserver(new SimpleConsoleLogMessageObserver());
 
 		server.alias("littleObject", LittleO.class);
 		return server;
